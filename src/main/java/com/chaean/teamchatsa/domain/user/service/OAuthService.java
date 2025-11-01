@@ -29,7 +29,6 @@ public class OAuthService {
 
 	public String loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
 		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserIdAndIsDeletedFalse(OAuthProvider.KAKAO, kakaoId);
-		LocalDateTime now = LocalDateTime.now();
 		User user;
 
 		if (existing.isPresent()) {
@@ -39,15 +38,15 @@ public class OAuthService {
 				throw new IllegalStateException("연결된 사용자 정보를 찾을 수 없습니다.");
 			}
 			user = userOpt.get();
-			account.syncProfile(emailFromProvider, nickname, profileImg, now);
+			account.syncProfile(emailFromProvider, nickname, profileImg);
 			// log
 		} else {
 			String username = nickname != null ? nickname : "kakao_" + kakaoId;
 			String randomPassword = encoder.encode(UUID.randomUUID().toString());
-			user = User.of(username, emailFromProvider, randomPassword, UserRole.PLAYER, now);
+			user = User.of(username, emailFromProvider, randomPassword, UserRole.PLAYER);
 			userRepo.save(user);
 
-			OAuthAccount link = OAuthAccount.kakaoLink(user.getId(), kakaoId, emailFromProvider, nickname, profileImg, now);
+			OAuthAccount link = OAuthAccount.kakaoLink(user.getId(), kakaoId, emailFromProvider, nickname, profileImg);
 			oauthRepo.save(link);
 		}
 

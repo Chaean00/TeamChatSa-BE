@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.user.service;
 
+import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import com.chaean.teamchatsa.domain.user.dto.LoginReq;
 import com.chaean.teamchatsa.domain.user.dto.LoginRes;
@@ -26,15 +27,17 @@ public class AuthService {
 
 	@Transactional
 	public void signup(SignupReq req) {
-		userRepo.findByEmailAndIsDeletedFalse(req.email()).ifPresent(user -> {
-			throw new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다.");
-		});
+		boolean exists = userRepo.existsByEmailAndIsDeletedFalse(req.email());
+		if (exists) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
+		}
 
 		User user = User.builder()
 				.username(req.userName())
 				.email(req.email())
 				.password(encoder.encode(req.password()))
-				.role(req.role())
+				.role(UserRole.PLAYER)
+				.phone(req.phone())
 				.build();
 
 		userRepo.save(user);

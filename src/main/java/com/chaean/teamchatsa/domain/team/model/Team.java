@@ -1,10 +1,10 @@
 package com.chaean.teamchatsa.domain.team.model;
 
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Entity
@@ -12,7 +12,7 @@ import org.hibernate.annotations.ColumnDefault;
 @NoArgsConstructor
 @Builder
 @Table(name = "team")
-public class Team {
+public class Team extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -40,5 +40,4 @@ public class Team {
     @NotNull
     @Column(name = "leader_user_id", nullable = false)
     private Long leaderUserId;
-
 }

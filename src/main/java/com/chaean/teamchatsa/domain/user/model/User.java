@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.user.model;
 
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -7,11 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -19,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "\"user\"")
-public class User {
+public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -44,16 +40,6 @@ public class User {
     private String password;
 
     @NotNull
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @NotNull
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @NotNull
     @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
@@ -64,14 +50,12 @@ public class User {
     private UserRole role;
 
 
-    public static User of(String username, String email, String passwordHash, UserRole role, LocalDateTime now) {
+    public static User of(String username, String email, String passwordHash, UserRole role) {
         return User.builder()
                 .username(username)
                 .email(email)
                 .password(passwordHash)
                 .role(role)
-                .createdAt(now)
-                .updatedAt(now)
                 .build();
     }
 }

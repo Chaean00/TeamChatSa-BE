@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS "team" (
     area VARCHAR(50) NOT NULL,
     img VARCHAR(255) NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
-    leader_user_id BIGINT NOT NULL
+    leader_user_id BIGINT NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "team_member" (
