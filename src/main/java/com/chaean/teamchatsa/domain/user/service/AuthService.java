@@ -2,9 +2,9 @@ package com.chaean.teamchatsa.domain.user.service;
 
 import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
-import com.chaean.teamchatsa.domain.user.dto.LoginReq;
-import com.chaean.teamchatsa.domain.user.dto.LoginRes;
-import com.chaean.teamchatsa.domain.user.dto.SignupReq;
+import com.chaean.teamchatsa.domain.user.dto.requset.LoginReq;
+import com.chaean.teamchatsa.domain.user.dto.response.LoginRes;
+import com.chaean.teamchatsa.domain.user.dto.requset.SignupReq;
 import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.exception.BusinessException;
@@ -27,15 +27,19 @@ public class AuthService {
 
 	@Transactional
 	public void signup(SignupReq req) {
-		boolean exists = userRepo.existsByEmailAndIsDeletedFalse(req.email());
-		if (exists) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
-		}
+		Optional<User> existsUser = userRepo.findByEmail(req.email());
+		if (existsUser.isPresent() && existsUser.get().getIsDeleted()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 탈퇴한 이메일입니다.");
+		if (existsUser.isPresent()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
+		if (req.password().length() < 8) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
+
+		boolean existsPhone = userRepo.existsByPhoneAndIsDeletedFalse(req.phone());
+		if (existsPhone) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 회원가입을 진행한 핸드폰 번호입니다.");
 
 		User user = User.builder()
 				.username(req.userName())
 				.email(req.email())
 				.password(encoder.encode(req.password()))
+				.position(req.position())
 				.role(UserRole.PLAYER)
 				.phone(req.phone())
 				.build();

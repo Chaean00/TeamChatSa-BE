@@ -1,5 +1,7 @@
 package com.chaean.teamchatsa.domain.user.model;
 
+import com.chaean.teamchatsa.domain.team.model.Position;
+import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
 import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +28,10 @@ public class User extends BaseEntity {
     @Column(name = "username", nullable = false, length = 50)
     private String username;
 
+    @Size(max = 50)
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
     @Size(max = 100)
     @Column(name = "email", length = 100)
     private String email;
@@ -49,6 +55,11 @@ public class User extends BaseEntity {
     @Column(name = "role", nullable = false)
     private UserRole role;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "position", nullable = false)
+    private Position position = Position.ALL;
 
     public static User of(String username, String email, String passwordHash, UserRole role) {
         return User.builder()
@@ -57,5 +68,19 @@ public class User extends BaseEntity {
                 .password(passwordHash)
                 .role(role)
                 .build();
+    }
+
+    public void update(UserUpdateReq req) {
+        if (req.nickname() != null || req.nickname().isBlank()) nickname = req.nickname();
+        if (req.position() != null || req.position().name().isBlank()) position = req.position();
+        if (req.phone() != null || req.phone().isBlank()) phone = req.phone();
+    }
+
+    public void updatePassword(String passwordHash) {
+        password = passwordHash;
+    }
+
+    public void deleteUser() {
+        isDeleted = true;
     }
 }

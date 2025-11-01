@@ -21,5 +21,6 @@ public enum Position {
     RF,   // 오른쪽 공격수
     ST,   // 스트라이커
     LS,   // 왼쪽 스트라이커
-    RS;   // 오른쪽 스트라이커
+    RS,   // 오른쪽 스트라이커
+    ALL
 }

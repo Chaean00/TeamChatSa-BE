@@ -29,9 +29,4 @@ public class TeamMember extends BaseEntity {
     @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "position", nullable = false)
-    private Position position;
 }
