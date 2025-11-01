@@ -1,7 +1,7 @@
 DO $$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'oauth_provider') THEN
-            CREATE TYPE oauth_provider AS ENUM ('kakao');
+            CREATE TYPE oauth_provider AS ENUM ('KAKAO');
         END IF;
 END $$;
 
