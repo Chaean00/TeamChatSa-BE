@@ -3,15 +3,17 @@ package com.chaean.teamchatsa.domain.match.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "match_post")
 public class MatchPost {
     @Id
@@ -50,24 +52,25 @@ public class MatchPost {
 
     @Column(name = "accepted_application_id")
     private Long acceptedApplicationId;
+
     @NotNull
-    @ColumnDefault("now()")
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @NotNull
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @NotNull
-    @ColumnDefault("false")
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
     @NotNull
-    @ColumnDefault("'OPEN'")
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private MatchPostStatus status;
+    private MatchPostStatus status = MatchPostStatus.OPEN;
 }

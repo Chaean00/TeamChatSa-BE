@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -45,7 +47,6 @@ public class OAuthAccount {
     private String profileImageUrl;
 
     @NotNull
-    @ColumnDefault("now()")
     @Column(name = "connected_at", nullable = false)
     private LocalDateTime connectedAt;
 
@@ -53,16 +54,17 @@ public class OAuthAccount {
     private LocalDateTime disconnectedAt;
 
     @NotNull
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @NotNull
-    @ColumnDefault("now()")
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
     @NotNull
-    @ColumnDefault("false")
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 

@@ -40,7 +40,7 @@ public class OAuthService {
 			}
 			user = userOpt.get();
 			account.syncProfile(emailFromProvider, nickname, profileImg, now);
-//			log.info();
+			// log
 		} else {
 			String username = nickname != null ? nickname : "kakao_" + kakaoId;
 			String randomPassword = encoder.encode(UUID.randomUUID().toString());

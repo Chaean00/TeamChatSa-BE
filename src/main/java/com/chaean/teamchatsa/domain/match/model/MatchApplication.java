@@ -2,15 +2,17 @@ package com.chaean.teamchatsa.domain.match.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Table(name = "match_application")
 public class MatchApplication {
     @Id
@@ -30,18 +32,18 @@ public class MatchApplication {
     private String message;
 
     @NotNull
-    @ColumnDefault("now()")
+    @CreatedDate
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @NotNull
-    @ColumnDefault("now()")
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @NotNull
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false)
-    private MatchApplicationStatus status;
+    private MatchApplicationStatus status = MatchApplicationStatus.PENDING;
 }

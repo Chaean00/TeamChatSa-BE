@@ -26,6 +26,7 @@ public class SecurityConfig {
                                     OAuth2SuccessHandler successHandler, OAuth2FailureHandler failureHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(

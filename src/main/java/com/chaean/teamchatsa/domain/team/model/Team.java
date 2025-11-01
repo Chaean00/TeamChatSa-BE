@@ -3,12 +3,14 @@ package com.chaean.teamchatsa.domain.team.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Table(name = "team")
 public class Team {
     @Id
@@ -31,7 +33,7 @@ public class Team {
     private String img;
 
     @NotNull
-    @ColumnDefault("false")
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 

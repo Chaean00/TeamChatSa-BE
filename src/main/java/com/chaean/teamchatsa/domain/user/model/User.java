@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -32,23 +34,27 @@ public class User {
     @Column(name = "email", length = 100)
     private String email;
 
+    @Size(max = 50)
+    @Column(name = "phone", length = 50)
+    private String phone;
+
     @Size(max = 100)
     @NotNull
     @Column(name = "password", nullable = false, length = 100)
     private String password;
 
     @NotNull
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @NotNull
-    @ColumnDefault("now()")
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @NotNull
-    @ColumnDefault("false")
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
