@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.user.model;
 
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -7,9 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OAuthAccount {
+public class OAuthAccount extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -54,16 +52,6 @@ public class OAuthAccount {
     private LocalDateTime disconnectedAt;
 
     @NotNull
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @NotNull
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @NotNull
     @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
@@ -74,16 +62,15 @@ public class OAuthAccount {
     private OAuthProvider provider;
 
     /** 도메인 메서드: 프로필 동기화 */
-    public void syncProfile(String emailFromProvider, String nickname, String imageUrl, LocalDateTime now) {
+    public void syncProfile(String emailFromProvider, String nickname, String imageUrl) {
         if (emailFromProvider != null) this.emailFromProvider = emailFromProvider;
         if (nickname != null) this.profileNickname = nickname;
         if (imageUrl != null) this.profileImageUrl = imageUrl;
-        this.updatedAt = now;
     }
 
 
     public static OAuthAccount kakaoLink(Long userId, String providerUserId, String emailFromProvider, 
-                                         String profileNickname, String profileImageUrl, LocalDateTime now
+                                         String profileNickname, String profileImageUrl
     ) {
         return OAuthAccount.builder()
                 .userId(userId)
@@ -92,9 +79,7 @@ public class OAuthAccount {
                 .emailFromProvider(emailFromProvider)
                 .profileNickname(profileNickname)
                 .profileImageUrl(profileImageUrl)
-                .connectedAt(now)
-                .createdAt(now)
-                .updatedAt(now)
+                .connectedAt(LocalDateTime.now())
                 .build();
     }
 }

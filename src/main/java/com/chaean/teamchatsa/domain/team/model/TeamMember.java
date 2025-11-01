@@ -1,12 +1,9 @@
 package com.chaean.teamchatsa.domain.team.model;
 
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -14,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "team_member")
-public class TeamMember {
+public class TeamMember extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -27,16 +24,6 @@ public class TeamMember {
     @NotNull
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @NotNull
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @NotNull
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     @NotNull
     @Builder.Default
