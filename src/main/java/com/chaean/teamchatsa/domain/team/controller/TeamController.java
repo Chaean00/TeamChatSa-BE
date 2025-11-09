@@ -20,29 +20,26 @@ public class TeamController {
 
 	@PostMapping("")
 	@PreAuthorize("hasAuthority('ROLE_PLAYER')")
-	private ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal Long userId, @RequestBody TeamCreateReq req) {
+	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal Long userId, @RequestBody TeamCreateReq req) {
 		teamService.registerTeam(userId, req);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body( ApiResponse.success(null));
 	}
 
 	@GetMapping("")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
-	private ResponseEntity<ApiResponse<TeamListRes>> getTeamList() {
+	public ResponseEntity<ApiResponse<TeamListRes>> getTeamList() {
 		// TODO : 팀 리스트 조회
 		return null;
 	}
 
 	@GetMapping("/{teamId}")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
-	private ResponseEntity<ApiResponse<Void>> getTeamDetail(@PathVariable Long teamId) {
+	public ResponseEntity<ApiResponse<Void>> getTeamDetail(@PathVariable Long teamId) {
 		// TODO : 팀 상세 조회
 		return null;
 	}
 
 	@PostMapping("/{teamId}/join")
-	@PreAuthorize("hasAuthority('ROLE_PLAYER')")
-	private ResponseEntity<ApiResponse<Void>> joinTeam(@PathVariable Long teamId) {
+	public ResponseEntity<ApiResponse<Void>> joinTeam(@PathVariable Long teamId) {
 		// TODO : 팀 가입 신청
 		return null;
 	}

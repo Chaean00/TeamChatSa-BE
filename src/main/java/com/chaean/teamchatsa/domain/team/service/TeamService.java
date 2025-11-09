@@ -28,8 +28,6 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 리더로 존재하는 팀이 존재합니다. 팀은 1개만 생성가능합니다.");
 		}
 
-		// TODO: S3와 같은 클라우드 스토리지에 저장 로직 필요
-
 		Team team = Team.builder()
 				.leaderUserId(userId)
 				.name(req.name())

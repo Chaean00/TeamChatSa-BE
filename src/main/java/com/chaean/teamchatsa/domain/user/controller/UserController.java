@@ -8,7 +8,6 @@ import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +19,6 @@ public class UserController {
 	private final UserService userService;
 
 	@GetMapping("")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
 	public ResponseEntity<ApiResponse<UserRes>> getUserProfile(@AuthenticationPrincipal Long userId) {
 		UserRes res = userService.findUser(userId);
 
@@ -28,7 +26,6 @@ public class UserController {
 	}
 
 	@PatchMapping("")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
 	public ResponseEntity<ApiResponse<Void>> updateUserProfile(@AuthenticationPrincipal Long userId, @RequestBody UserUpdateReq req) {
 		userService.updateUser(userId, req);
 
@@ -36,7 +33,6 @@ public class UserController {
 	}
 
 	@PutMapping("/password")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
 	public ResponseEntity<ApiResponse<Void>> updateUserPassword(@AuthenticationPrincipal Long userId, @RequestBody PasswordUpdateReq req) {
 		userService.updatePassword(userId, req);
 
@@ -44,7 +40,6 @@ public class UserController {
 	}
 
 	@GetMapping("/check")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
 	public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestParam String nickname) {
 		Boolean exists = userService.existsByNickname(nickname);
 
@@ -52,7 +47,6 @@ public class UserController {
 	}
 
 	@DeleteMapping("")
-	@PreAuthorize("hasAnyAuthority('ROLE_PLAYER', 'ROLE_LEADER')")
 	public ResponseEntity<ApiResponse<Void>> deleteUserProfile(@AuthenticationPrincipal Long userId) {
 		userService.deleteUser(userId);
 

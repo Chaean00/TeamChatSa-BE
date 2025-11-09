@@ -35,7 +35,6 @@ public class Team extends DeleteAndTimeEntity {
     @Column(name = "description")
     private String description;
 
-    @Size(max = 30)
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "contact_type", nullable = false, length = 30)
