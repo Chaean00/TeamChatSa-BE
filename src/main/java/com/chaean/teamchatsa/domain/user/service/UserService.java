@@ -6,6 +6,7 @@ import com.chaean.teamchatsa.domain.user.dto.response.UserRes;
 import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,10 @@ public class UserService {
 	private final PasswordEncoder encoder;
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public UserRes findUser(Long userId) {
 		User user = userRepo.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
-
-		log.info("[유저 정보 조회] userId = {}", user.getId());
 
 		boolean isLinked = authRepo.existsByUserIdAndIsDeletedFalse(user.getId());
 
@@ -44,27 +44,27 @@ public class UserService {
 	}
 
 	@Transactional
+	@Loggable
 	public void updateUser(Long userId, UserUpdateReq req) {
 		User user = userRepo.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
 		user.update(req);
-
-		log.info("[유저 정보 수정] userId = {}", user.getId());
 	}
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public Boolean existsByNickname(String nickname) {
-		boolean exists = userRepo.existsByNicknameAndIsDeletedFalse(nickname);
+		boolean exists = userRepo.existsByNicknameAndIsDeletedFalse(nickname.trim());
 
-		log.info("[닉네임 중복확인] nickname = {}", nickname);
 		if (exists) {
-			return false;
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 사용중인 닉네임입니다.");
 		}
 		return true;
 	}
 
 	@Transactional
+	@Loggable
 	public void updatePassword(Long userId, PasswordUpdateReq req) {
 		if (req.newPassword().length() < 8) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
@@ -81,10 +81,11 @@ public class UserService {
 	}
 
 	@Transactional
+	@Loggable
 	public void deleteUser(Long userId) {
 		User user = userRepo.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
-		user.deleteUser();
+		user.softDelete();
 	}
 }

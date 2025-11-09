@@ -1,8 +1,7 @@
 package com.chaean.teamchatsa.global.exception;
 
-import com.chaean.teamchatsa.global.response.ApiResponse;
+import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

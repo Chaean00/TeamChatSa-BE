@@ -4,7 +4,7 @@ import com.chaean.teamchatsa.domain.user.dto.requset.LoginReq;
 import com.chaean.teamchatsa.domain.user.dto.response.LoginRes;
 import com.chaean.teamchatsa.domain.user.dto.requset.SignupReq;
 import com.chaean.teamchatsa.domain.user.service.AuthService;
-import com.chaean.teamchatsa.global.response.ApiResponse;
+import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

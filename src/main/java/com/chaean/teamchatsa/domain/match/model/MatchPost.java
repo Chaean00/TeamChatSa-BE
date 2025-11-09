@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.match.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "match_post")
-public class MatchPost extends BaseEntity {
+public class MatchPost extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -51,11 +51,6 @@ public class MatchPost extends BaseEntity {
 
     @Column(name = "accepted_application_id")
     private Long acceptedApplicationId;
-
-    @NotNull
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
 
     @NotNull
     @Builder.Default

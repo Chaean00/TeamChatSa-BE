@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.team.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "team_member")
-public class TeamMember extends BaseEntity {
+public class TeamMember extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -24,9 +24,4 @@ public class TeamMember extends BaseEntity {
     @NotNull
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @NotNull
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
 }

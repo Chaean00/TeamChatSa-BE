@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.team.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,11 +12,15 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Table(name = "team")
-public class Team extends BaseEntity {
+public class Team extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
+
+    @NotNull
+    @Column(name = "leader_user_id", nullable = false)
+    private Long leaderUserId;
 
     @Size(max = 50)
     @NotNull
@@ -28,16 +32,21 @@ public class Team extends BaseEntity {
     @Column(name = "area", nullable = false, length = 50)
     private String area;
 
+    @Column(name = "description")
+    private String description;
+
+    @Size(max = 30)
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "contact_type", nullable = false, length = 30)
+    private ContactType contactType;
+
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "contact", nullable = false, length = 50)
+    private String contact;
+
     @Size(max = 255)
     @Column(name = "img")
     private String img;
-
-    @NotNull
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
-    @NotNull
-    @Column(name = "leader_user_id", nullable = false)
-    private Long leaderUserId;
 }

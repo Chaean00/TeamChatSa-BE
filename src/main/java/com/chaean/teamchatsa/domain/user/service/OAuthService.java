@@ -6,6 +6,7 @@ import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -27,6 +29,8 @@ public class OAuthService {
 	private final JwtProvider jwtProvider;
 	private final PasswordEncoder encoder;
 
+	@Transactional
+	@Loggable
 	public String loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
 		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserIdAndIsDeletedFalse(OAuthProvider.KAKAO, kakaoId);
 		User user;
@@ -43,7 +47,7 @@ public class OAuthService {
 		} else {
 			String username = nickname != null ? nickname : "kakao_" + kakaoId;
 			String randomPassword = encoder.encode(UUID.randomUUID().toString());
-			user = User.of(username, emailFromProvider, randomPassword, UserRole.PLAYER);
+			user = User.of(username, emailFromProvider, randomPassword, UserRole.ROLE_PLAYER);
 			userRepo.save(user);
 
 			OAuthAccount link = OAuthAccount.kakaoLink(user.getId(), kakaoId, emailFromProvider, nickname, profileImg);

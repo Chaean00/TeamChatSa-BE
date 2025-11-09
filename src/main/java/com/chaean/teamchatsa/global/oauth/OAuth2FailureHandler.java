@@ -27,7 +27,6 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
 		log.info("[OAuth] Failure Handler");
 		log.info("exception = {}", exception.getMessage());
-		log.info("redirect-uri = {}", t);
 		getRedirectStrategy().sendRedirect(request, response, redirectFailure);
 	}
 }

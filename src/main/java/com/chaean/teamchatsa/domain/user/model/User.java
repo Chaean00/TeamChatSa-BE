@@ -2,7 +2,7 @@ package com.chaean.teamchatsa.domain.user.model;
 
 import com.chaean.teamchatsa.domain.team.model.Position;
 import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "\"user\"")
-public class User extends BaseEntity {
+public class User extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -46,11 +46,6 @@ public class User extends BaseEntity {
     private String password;
 
     @NotNull
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private UserRole role;
@@ -71,16 +66,12 @@ public class User extends BaseEntity {
     }
 
     public void update(UserUpdateReq req) {
-        if (req.nickname() != null || req.nickname().isBlank()) nickname = req.nickname();
-        if (req.position() != null || req.position().name().isBlank()) position = req.position();
-        if (req.phone() != null || req.phone().isBlank()) phone = req.phone();
+        if (req.nickname() != null) nickname = req.nickname();
+        if (req.position() != null) position = req.position();
+        if (req.phone() != null) phone = req.phone();
     }
 
     public void updatePassword(String passwordHash) {
         password = passwordHash;
-    }
-
-    public void deleteUser() {
-        isDeleted = true;
     }
 }
