@@ -11,7 +11,9 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "team_join_request")
+@Table(name = "team_join_request", uniqueConstraints = {
+		@UniqueConstraint(name = "uc_teamjoinrequest_user_id", columnNames = {"user_id", "team_id"})
+})
 public class TeamJoinRequest extends TimeEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +28,6 @@ public class TeamJoinRequest extends TimeEntity {
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
 
-	@Size(max = 30)
 	@NotNull
 	@Builder.Default
 	@Enumerated(EnumType.STRING)
@@ -36,4 +37,12 @@ public class TeamJoinRequest extends TimeEntity {
 	@Size(max = 255)
 	@Column(name = "message")
 	private String message;
+
+	public static TeamJoinRequest of(Long teamId, Long userId, String message) {
+		return TeamJoinRequest.builder()
+				.teamId(teamId)
+				.userId(userId)
+				.message(message)
+				.build();
+	}
 }

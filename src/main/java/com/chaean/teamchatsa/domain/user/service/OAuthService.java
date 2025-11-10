@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.user.service;
 
+import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
 import com.chaean.teamchatsa.domain.user.model.OAuthAccount;
 import com.chaean.teamchatsa.domain.user.model.OAuthProvider;
 import com.chaean.teamchatsa.domain.user.model.User;
@@ -12,11 +13,12 @@ import com.chaean.teamchatsa.global.exception.ErrorCode;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,12 +28,13 @@ import java.util.UUID;
 public class OAuthService {
 	private final UserRepository userRepo;
 	private final OAuthAccountRepository oauthRepo;
+	private final RedisTemplate<String, String> redisTemplate;
 	private final JwtProvider jwtProvider;
 	private final PasswordEncoder encoder;
 
 	@Transactional
 	@Loggable
-	public String loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
+	public TokenRes loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
 		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserIdAndIsDeletedFalse(OAuthProvider.KAKAO, kakaoId);
 		User user;
 
@@ -39,11 +42,10 @@ public class OAuthService {
 			OAuthAccount account = existing.get();
 			Optional<User> userOpt = userRepo.findByIdAndIsDeletedFalse(account.getUserId());
 			if (userOpt.isEmpty()) {
-				throw new IllegalStateException("연결된 사용자 정보를 찾을 수 없습니다.");
+				throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 			}
 			user = userOpt.get();
 			account.syncProfile(emailFromProvider, nickname, profileImg);
-			// log
 		} else {
 			String username = nickname != null ? nickname : "kakao_" + kakaoId;
 			String randomPassword = encoder.encode(UUID.randomUUID().toString());
@@ -54,6 +56,22 @@ public class OAuthService {
 			oauthRepo.save(link);
 		}
 
-		return jwtProvider.createAccessToken(user.getId());
+		// RefreshToken 생성 및 Redis 저장
+		String accessToken = jwtProvider.createAccessToken(user.getId());
+		String refreshToken = jwtProvider.createRefreshToken(user.getId());
+		redisTemplate.opsForValue().set(
+				"refresh:token:" + refreshToken,
+				user.getId().toString(),
+				Duration.ofDays(14)
+		);
+
+		redisTemplate.opsForValue().set(
+				"refresh:user:" + user.getId(),
+				refreshToken,
+				Duration.ofDays(14)
+		);
+
+		// Access Token만 반환 (OAuth Success Handler에서 Refresh Token은 별도 처리)
+		return new TokenRes(accessToken, refreshToken) ;
 	}
 }
