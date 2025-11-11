@@ -133,7 +133,7 @@ class TeamServiceTest {
                     .id(teamId)
                     .name("teamName")
                     .build();
-            given(teamRepo.findByAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
             given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
 
             // when
@@ -148,7 +148,7 @@ class TeamServiceTest {
         void fail_not_found() {
             // given
             Long teamId = 1L;
-            given(teamRepo.findByAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
 
             // when
             // then
@@ -207,6 +207,89 @@ class TeamServiceTest {
             // when
             // then
             assertThatThrownBy(() -> teamService.applyToTeam(teamId, userId, req))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("팀 삭제")
+    class DeleteTeam {
+
+        @Test
+        @DisplayName("성공 - 리더 본인만 있는 팀 삭제")
+        void success() {
+            // given
+            Long teamId = 1L;
+            Team team = Team.builder()
+                    .id(teamId)
+                    .leaderUserId(1L)
+                    .name("teamName")
+                    .area("서울")
+                    .description("설명")
+                    .contactType(ContactType.KAKAO)
+                    .contact("contact")
+                    .build();
+
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
+
+            // when
+            teamService.deleteTeam(teamId);
+
+            // then
+            assertThat(team.isDeleted()).isTrue();
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 팀")
+        void fail_team_not_found() {
+            // given
+            Long teamId = 1L;
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.deleteTeam(teamId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 팀원이 2명 이상인 경우")
+        void fail_has_members() {
+            // given
+            Long teamId = 1L;
+            Team team = Team.builder()
+                    .id(teamId)
+                    .leaderUserId(1L)
+                    .name("teamName")
+                    .area("서울")
+                    .description("설명")
+                    .contactType(ContactType.KAKAO)
+                    .contact("contact")
+                    .build();
+
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(3L); // 리더 포함 3명
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.deleteTeam(teamId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("팀원 존재로 인해 팀을 삭제할 수 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 삭제된 팀")
+        void fail_already_deleted() {
+            // given
+            Long teamId = 1L;
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.deleteTeam(teamId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("존재하지 않는 팀입니다.");
         }

@@ -24,4 +24,10 @@ public class TeamMember extends DeleteAndTimeEntity {
     @NotNull
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "role", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private TeamRole role = TeamRole.MEMBER;
 }

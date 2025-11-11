@@ -19,6 +19,9 @@ public enum ErrorCode {
 
 	// 403
 	FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+	NOT_TEAM_LEADER(HttpStatus.FORBIDDEN, "팀장이 아닙니다."),
+	INSUFFICIENT_TEAM_ROLE(HttpStatus.FORBIDDEN, "해당 작업을 수행할 권한이 없습니다."),
+	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "팀 멤버가 아닙니다."),
 
 	// 404
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),

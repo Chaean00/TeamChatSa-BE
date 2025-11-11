@@ -47,7 +47,7 @@ class UserServiceTest {
 		@DisplayName("성공 - 로컬 계정")
 		public void success_localAccount() {
 			//given
-			User user = new User(1L, "테스터", "테스터_닉네임", "abc@naver.com", "010-1234-5678", "1234", UserRole.ROLE_PLAYER, Position.CB);
+			User user = new User(1L, "테스터", "테스터_닉네임", "abc@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
 			given(userRepo.findByIdAndIsDeletedFalse(1L)).willReturn(Optional.of(user));
 			given(authRepo.existsByUserIdAndIsDeletedFalse(1L)).willReturn(false);
 
@@ -66,7 +66,7 @@ class UserServiceTest {
 		public void success_socialAccount() {
 			//given
 			LocalDateTime now = LocalDateTime.now();
-			User user = new User(2L, "테스터", "테스터_닉네임", "abcd@naver.com", "010-1234-5678", "1234", UserRole.ROLE_PLAYER, Position.CB);
+			User user = new User(2L, "테스터", "테스터_닉네임", "abcd@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
 			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null, OAuthProvider.KAKAO);
 			given(userRepo.findByIdAndIsDeletedFalse(2L)).willReturn(Optional.of(user));
 			given(authRepo.existsByUserIdAndIsDeletedFalse(2L)).willReturn(true);

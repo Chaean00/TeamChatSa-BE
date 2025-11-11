@@ -5,11 +5,13 @@ import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
 import com.chaean.teamchatsa.domain.team.model.Team;
-import com.chaean.teamchatsa.domain.team.model.TeamJoinRequest;
+import com.chaean.teamchatsa.domain.team.model.TeamApplication;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -29,13 +31,12 @@ public class TeamService {
 	private final TeamJoinRequestRepository teamJoinRequestRepo;
 
 	@Transactional
+	@Loggable
 	public void registerTeam(Long userId, TeamCreateReq req) {
-		boolean hasTeam = teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId);
-		if (hasTeam) {
+		if (teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 가입한 팀이 존재합니다.");
 		}
-		hasTeam = teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId);
-		if (hasTeam) {
+		if (teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 리더로 존재하는 팀이 존재합니다. 팀은 1개만 생성가능합니다.");
 		}
 
@@ -49,21 +50,26 @@ public class TeamService {
 				.img(req.imgUrl())
 				.build();
 
+		TeamMember teamMember = TeamMember.builder()
+				.teamId(team.getId())
+				.userId(userId)
+				.role(TeamRole.LEADER)
+				.build();
+
 		teamRepo.save(team);
-		teamMemberRepo.save(TeamMember.builder()
-						.teamId(team.getId())
-						.userId(userId)
-						.build());
+		teamMemberRepo.save(teamMember);
 	}
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public Slice<TeamListRes> findTeamList(Pageable pageable) {
 		return teamRepo.findTeamListSlice(pageable);
 	}
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public TeamDetailRes findTeamDetail(Long teamId) {
-		Team team = teamRepo.findByAndIsDeletedFalse(teamId)
+		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
@@ -72,6 +78,7 @@ public class TeamService {
 	}
 
 	@Transactional
+	@Loggable
 	public void applyToTeam(Long teamId, Long userId, TeamJoinReq req) {
 		boolean exists = teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId);
 		if (exists) {
@@ -83,6 +90,22 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
 		}
 
-		teamJoinRequestRepo.save(TeamJoinRequest.of(teamId, userId, req.message()));
+		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.message()));
+	}
+
+	@Transactional
+	@Loggable
+	public void deleteTeam(Long teamId) {
+		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
+
+		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
+
+		// 본인 제외
+		if (memberCount > 1) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "팀원 존재로 인해 팀을 삭제할 수 없습니다.");
+		}
+
+		team.softDelete();
 	}
 }

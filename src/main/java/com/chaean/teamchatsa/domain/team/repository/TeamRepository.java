@@ -11,7 +11,8 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
-    Optional<Team> findByAndIsDeletedFalse(Long teamId);
+    Optional<Team> findByIdAndIsDeletedFalse(Long teamId);
+
     boolean existsByIdAndIsDeletedFalse(Long teamId);
 
     boolean existsByLeaderUserIdAndIsDeletedFalse(Long userId);

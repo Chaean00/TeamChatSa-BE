@@ -1,7 +1,6 @@
 package com.chaean.teamchatsa.domain.user.service;
 
 import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
-import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import com.chaean.teamchatsa.domain.user.dto.requset.LoginReq;
@@ -48,7 +47,6 @@ public class AuthService {
 				.email(req.email())
 				.password(encoder.encode(req.password()))
 				.position(req.position())
-				.role(UserRole.ROLE_PLAYER)
 				.phone(req.phone())
 				.build();
 

@@ -47,8 +47,9 @@ public class User extends DeleteAndTimeEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(name = "role", nullable = false)
-    private UserRole role;
+    private UserRole role = UserRole.USER;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -56,12 +57,11 @@ public class User extends DeleteAndTimeEntity {
     @Column(name = "position", nullable = false)
     private Position position = Position.ALL;
 
-    public static User of(String username, String email, String passwordHash, UserRole role) {
+    public static User of(String username, String email, String passwordHash) {
         return User.builder()
                 .username(username)
                 .email(email)
                 .password(passwordHash)
-                .role(role)
                 .build();
     }
 

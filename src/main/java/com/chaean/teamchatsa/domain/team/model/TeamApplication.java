@@ -11,10 +11,10 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "team_join_request", uniqueConstraints = {
-		@UniqueConstraint(name = "uc_teamjoinrequest_user_id", columnNames = {"user_id", "team_id"})
+@Table(name = "team_application", uniqueConstraints = {
+		@UniqueConstraint(name = "uc_team_application_user_id", columnNames = {"team_id", "user_id"})
 })
-public class TeamJoinRequest extends TimeEntity {
+public class TeamApplication extends TimeEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", nullable = false)
@@ -38,8 +38,8 @@ public class TeamJoinRequest extends TimeEntity {
 	@Column(name = "message")
 	private String message;
 
-	public static TeamJoinRequest of(Long teamId, Long userId, String message) {
-		return TeamJoinRequest.builder()
+	public static TeamApplication of(Long teamId, Long userId, String message) {
+		return TeamApplication.builder()
 				.teamId(teamId)
 				.userId(userId)
 				.message(message)
