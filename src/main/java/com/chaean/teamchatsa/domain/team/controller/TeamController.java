@@ -11,7 +11,6 @@ import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,15 +34,11 @@ public class TeamController {
 		return ResponseEntity.status(HttpStatus.CREATED).body( ApiResponse.success(null));
 	}
 
-	/** 팀 목록 조회 */
+	/** 팀 목록 조회 (무한 스크롤) */
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<Slice<TeamListRes>>> getTeamList(
-			@PageableDefault(
-					size = 20,
-					sort = "createdAt",
-					direction = Sort.Direction.DESC) Pageable pageable
+			@PageableDefault(size = 20) Pageable pageable
 	) {
-
 		Slice<TeamListRes> res = teamService.findTeamList(pageable);
 		return ResponseEntity.ok(ApiResponse.success(res));
 	}
