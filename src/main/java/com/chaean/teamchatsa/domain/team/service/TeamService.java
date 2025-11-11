@@ -63,7 +63,7 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	public TeamDetailRes findTeamDetail(Long teamId) {
-		Team team = teamRepo.findById(teamId)
+		Team team = teamRepo.findByAndIsDeletedFalse(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
@@ -78,8 +78,10 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 해당 팀에 가입 신청을 한 상태입니다.");
 		}
 
-		Team team = teamRepo.findById(teamId)
-				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
+		boolean existsTeam = teamRepo.existsByIdAndIsDeletedFalse(teamId);
+		if (!existsTeam) {
+			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
+		}
 
 		teamJoinRequestRepo.save(TeamJoinRequest.of(teamId, userId, req.message()));
 	}
