@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -54,7 +56,8 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public Boolean existsByNickname(String nickname) {
+	public boolean existsByNickname(String nickname) {
+		Objects.requireNonNull(nickname);
 		boolean exists = userRepo.existsByNicknameAndIsDeletedFalse(nickname.trim());
 
 		if (exists) {
