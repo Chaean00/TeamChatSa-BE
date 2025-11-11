@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.match.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.TimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Table(name = "match_application")
-public class MatchApplication extends BaseEntity {
+public class MatchApplication extends TimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)

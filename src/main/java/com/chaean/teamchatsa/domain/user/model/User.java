@@ -1,6 +1,8 @@
 package com.chaean.teamchatsa.domain.user.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.domain.team.model.Position;
+import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "\"user\"")
-public class User extends BaseEntity {
+public class User extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -25,6 +27,10 @@ public class User extends BaseEntity {
     @NotNull
     @Column(name = "username", nullable = false, length = 50)
     private String username;
+
+    @Size(max = 50)
+    @Column(name = "nickname", length = 50)
+    private String nickname;
 
     @Size(max = 100)
     @Column(name = "email", length = 100)
@@ -40,22 +46,32 @@ public class User extends BaseEntity {
     private String password;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
+    @Column(name = "role", nullable = false)
+    private UserRole role = UserRole.USER;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
+    @Builder.Default
+    @Column(name = "position", nullable = false)
+    private Position position = Position.ALL;
 
-
-    public static User of(String username, String email, String passwordHash, UserRole role) {
+    public static User of(String username, String email, String passwordHash) {
         return User.builder()
                 .username(username)
                 .email(email)
                 .password(passwordHash)
-                .role(role)
                 .build();
+    }
+
+    public void update(UserUpdateReq req) {
+        if (req.nickname() != null) nickname = req.nickname();
+        if (req.position() != null) position = req.position();
+        if (req.phone() != null) phone = req.phone();
+    }
+
+    public void updatePassword(String passwordHash) {
+        password = passwordHash;
     }
 }

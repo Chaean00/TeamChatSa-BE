@@ -1,4 +1,4 @@
-package com.chaean.teamchatsa.global.response;
+package com.chaean.teamchatsa.global.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

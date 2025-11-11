@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.domain.user.model;
 
-import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
+import com.chaean.teamchatsa.global.common.model.TimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OAuthAccount extends BaseEntity {
+public class OAuthAccount extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -50,11 +51,6 @@ public class OAuthAccount extends BaseEntity {
 
     @Column(name = "disconnected_at")
     private LocalDateTime disconnectedAt;
-
-    @NotNull
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
 
     @NotNull
     @Enumerated(EnumType.STRING)

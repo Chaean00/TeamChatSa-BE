@@ -8,9 +8,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 
 @Component
 public class JwtProvider {
@@ -30,6 +33,22 @@ public class JwtProvider {
                 .compact();
     }
 
+    public String createRefreshToken(Long userId) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .setSubject(userId.toString())
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(now.plus(14, ChronoUnit.DAYS)))
+                .claim("type", "refresh")
+                .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public LocalDateTime getRefreshTokenExpiry() {
+        return LocalDateTime.now().plusDays(14);
+    }
+
     public Long parseUserId(String token) {
         Claims body = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
@@ -38,5 +57,33 @@ public class JwtProvider {
                 .getBody();
 
         return Long.parseLong(body.getSubject());
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return claims.getExpiration().before(new java.util.Date());
+        } catch (Exception e) {
+            return true; // 파싱 불가능한 토큰은 만료된 것으로 처리
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return "refresh".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
