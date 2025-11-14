@@ -10,7 +10,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "match_application")
+@Table(name = "match_application", uniqueConstraints = {
+        @UniqueConstraint(name = "unique_match_post_team", columnNames = {"post_id", "applicant_team_id"})
+})
 public class MatchApplication extends TimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,4 +35,8 @@ public class MatchApplication extends TimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MatchApplicationStatus status = MatchApplicationStatus.PENDING;
+
+    public void updateStatus(MatchApplicationStatus status) {
+        this.status = status;
+    }
 }

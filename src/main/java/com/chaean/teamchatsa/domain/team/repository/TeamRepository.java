@@ -9,34 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface TeamRepository extends JpaRepository<Team, Long> {
+public interface TeamRepository extends JpaRepository<Team, Long>, TeamRepositoryCustom {
 
     Optional<Team> findByIdAndIsDeletedFalse(Long teamId);
 
     boolean existsByIdAndIsDeletedFalse(Long teamId);
 
     boolean existsByLeaderUserIdAndIsDeletedFalse(Long userId);
-
-    @Query("""
-        SELECT new com.chaean.teamchatsa.domain.team.dto.response.TeamListRes(
-                t.id,
-                t.name,
-                t.area,
-                t.img,
-                t.description,
-                coalesce(
-                    cast((
-                        select count(tm.id)
-                        from TeamMember tm
-                        where tm.teamId= t.id
-                          and tm.isDeleted = false
-                    ) as long),
-                    0L
-                )
-            )
-        FROM Team t
-        WHERE t.isDeleted = false
-        ORDER BY t.createdAt desc, t.id desc 
-    """)
-    Slice<TeamListRes> findTeamListSlice(Pageable pageable);
 }

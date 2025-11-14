@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS "team" (
     contact_type VARCHAR(30) NOT NULL ,
     CONSTRAINT team_contact_type_check CHECK (contact_type IN ('EMAIL','PHONE', 'KAKAO')),
     contact VARCHAR(50) NOT NULL,
+    level VARCHAR(20) NOT NULL,
     img TEXT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS "match_post"
     match_date TIMESTAMP NOT NULL,
     lat DOUBLE PRECISION NOT NULL,
     lng DOUBLE PRECISION NOT NULL,
+    address VARCHAR(255) NOT NULL,
     place_name VARCHAR(120),
 
     -- 편의용

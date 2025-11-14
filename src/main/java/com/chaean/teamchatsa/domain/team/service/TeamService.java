@@ -16,8 +16,10 @@ import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,9 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 리더로 존재하는 팀이 존재합니다. 팀은 1개만 생성가능합니다.");
 		}
 
+		// TODO : 중복 팀명 체크
+
+		// TODO : of 패턴으로 전환
 		Team team = Team.builder()
 				.leaderUserId(userId)
 				.name(req.name())
@@ -48,7 +53,10 @@ public class TeamService {
 				.contactType(req.contactType())
 				.contact(req.contact())
 				.img(req.imgUrl())
+				.level(req.level())
 				.build();
+
+		teamRepo.save(team);
 
 		TeamMember teamMember = TeamMember.builder()
 				.teamId(team.getId())
@@ -56,14 +64,14 @@ public class TeamService {
 				.role(TeamRole.LEADER)
 				.build();
 
-		teamRepo.save(team);
 		teamMemberRepo.save(teamMember);
 	}
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public Slice<TeamListRes> findTeamList(Pageable pageable) {
-		return teamRepo.findTeamListSlice(pageable);
+	public Slice<TeamListRes> findTeamList(int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+		return teamRepo.findTeamListWithPagination(pageable);
 	}
 
 	@Transactional(readOnly = true)
