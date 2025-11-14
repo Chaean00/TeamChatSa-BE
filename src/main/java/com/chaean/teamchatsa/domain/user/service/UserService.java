@@ -69,18 +69,18 @@ public class UserService {
 	@Transactional
 	@Loggable
 	public void updatePassword(Long userId, PasswordUpdateReq req) {
-		if (req.newPassword().length() < 8) {
+		if (req.getNewPassword().length() < 8) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 		}
 
 		User user = userRepo.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
-		if (!encoder.matches(req.currentPassword(), user.getPassword())) {
+		if (!encoder.matches(req.getCurrentPassword(), user.getPassword())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "현재 비밀번호가 일치하지 않습니다.");
 		}
 
-		user.updatePassword(encoder.encode(req.newPassword()));
+		user.updatePassword(encoder.encode(req.getNewPassword()));
 	}
 
 	@Transactional

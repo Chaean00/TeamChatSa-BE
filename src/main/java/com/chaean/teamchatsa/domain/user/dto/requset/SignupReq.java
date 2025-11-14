@@ -2,16 +2,21 @@ package com.chaean.teamchatsa.domain.user.dto.requset;
 
 import com.chaean.teamchatsa.domain.team.model.Position;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record SignupReq(
-		@NotNull
-		String userName,
-		@NotNull
-		String email,
-		@NotNull
-		String password,
-		String phone,
-		@NotNull
-		Position position
-) {
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class SignupReq {
+	@NotNull
+	private String userName;
+	@NotNull
+	private String email;
+	@NotNull
+	private String password;
+	private String phone;
+	@NotNull
+	private Position position;
 }

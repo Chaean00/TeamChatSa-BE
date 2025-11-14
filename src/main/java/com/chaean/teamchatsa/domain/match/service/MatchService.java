@@ -39,7 +39,7 @@ public class MatchService {
 	/** 매치 게시물 등록 */
 	@Transactional
 	public void registerMatchPost(Long userId, MatchPostCreateReq req) {
-		if (req.matchDate().isBefore(LocalDateTime.now())) {
+		if (req.getMatchDate().isBefore(LocalDateTime.now())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "매치 날짜는 현재 시각 이후여야 합니다.");
 		}
 

@@ -56,7 +56,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 		try {
 			TokenRes tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
 			// refresh Token 쿠카 설정
-			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.refreshToken())
+			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
 					.httpOnly(true)
 					.secure("prod".equals(activeProfile))       // 운영 HTTPS 필수
 					.sameSite("None")   // 다른 도메인으로 리다이렉트한다면 None 필요
@@ -66,7 +66,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 			response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-			String url = redirectSuccess + "?token=" + URLEncoder.encode(tokens.accessToken(), StandardCharsets.UTF_8);
+			String url = redirectSuccess + "?token=" + URLEncoder.encode(tokens.getAccessToken(), StandardCharsets.UTF_8);
 			getRedirectStrategy().sendRedirect(request, response, url);
 		} catch (BusinessException e) {
 			log.error("[OAuth] 카카오 로그인 중 에러가 발생했습니다.: {}", e.getMessage());
