@@ -11,7 +11,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "team")
+@Table(name = "team", uniqueConstraints = {
+        @UniqueConstraint(name = "unique_team_leader", columnNames = {"leader_user_id"})
+})
 public class Team extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +46,10 @@ public class Team extends DeleteAndTimeEntity {
     @NotNull
     @Column(name = "contact", nullable = false, length = 50)
     private String contact;
+
+    @NotNull
+    @Column(name = "level", nullable = false, length = 20)
+    private String level;
 
     @Size(max = 255)
     @Column(name = "img")

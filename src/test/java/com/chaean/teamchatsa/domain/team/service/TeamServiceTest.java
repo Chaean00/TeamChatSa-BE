@@ -17,10 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.*;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -108,12 +105,14 @@ class TeamServiceTest {
         @DisplayName("성공")
         void success() {
             // given
-            Pageable pageable = PageRequest.of(0, 10);
+            int page = 0;
+            int size = 10;
+            Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
             Slice<TeamListRes> expected = new SliceImpl<>(Collections.emptyList());
-            given(teamRepo.findTeamListSlice(pageable)).willReturn(expected);
+            given(teamRepo.findTeamListWithPagination(pageable)).willReturn(expected);
 
             // when
-            Slice<TeamListRes> result = teamService.findTeamList(pageable);
+            Slice<TeamListRes> result = teamService.findTeamList(page, size);
 
             // then
             assertThat(result).isEqualTo(expected);

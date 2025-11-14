@@ -31,15 +31,16 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal Long userId, @RequestBody @Validated TeamCreateReq req) {
 		teamService.registerTeam(userId, req);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body( ApiResponse.success(null));
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
 	}
 
 	/** 팀 목록 조회 (무한 스크롤) */
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<Slice<TeamListRes>>> getTeamList(
-			@PageableDefault(size = 20) Pageable pageable
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size
 	) {
-		Slice<TeamListRes> res = teamService.findTeamList(pageable);
+		Slice<TeamListRes> res = teamService.findTeamList(page, size);
 		return ResponseEntity.ok(ApiResponse.success(res));
 	}
 
@@ -64,7 +65,7 @@ public class TeamController {
 	@RequireTeamRole(TeamRole.LEADER)
 	public ResponseEntity<ApiResponse<Void>> deleteTeam(@PathVariable Long teamId) {
 		teamService.deleteTeam(teamId);
-		return ResponseEntity.ok(ApiResponse.success("팀이 삭제되었습니다.", null));
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiResponse.success("팀이 삭제되었습니다.", null));
 	}
 
 	/** 팀 정보 수정 - LEADER 또는 CO_LEADER만 가능

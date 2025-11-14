@@ -13,6 +13,8 @@ public record TeamCreateReq(
 		ContactType contactType,
 		@NotNull
 		String contact,
-		String imgUrl
+		String imgUrl,
+		@NotNull
+		String level
 ) {
 }

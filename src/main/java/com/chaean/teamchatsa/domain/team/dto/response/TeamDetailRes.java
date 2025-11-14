@@ -9,7 +9,8 @@ public record TeamDetailRes(
 		String area,
 		String img,
 		String description,
-		Long memberCount
+		Long memberCount,
+		String level
 ) {
 	public static TeamDetailRes fromEntity(Team team, Long memberCount) {
 		return new TeamDetailRes(
@@ -19,7 +20,8 @@ public record TeamDetailRes(
 				team.getArea(),
 				team.getImg(),
 				team.getDescription(),
-				memberCount
+				memberCount,
+				team.getLevel()
 		);
 	}
 }

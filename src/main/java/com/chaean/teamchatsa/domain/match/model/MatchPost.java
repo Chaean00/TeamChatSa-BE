@@ -45,6 +45,10 @@ public class MatchPost extends DeleteAndTimeEntity {
     @Column(name = "lng", nullable = false)
     private Double lng;
 
+    @NotNull
+    @Column(name = "address", nullable = false, length = 255)
+    private String address;
+
     @Size(max = 120)
     @Column(name = "place_name", length = 120)
     private String placeName;
@@ -57,4 +61,18 @@ public class MatchPost extends DeleteAndTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MatchPostStatus status = MatchPostStatus.OPEN;
+
+    public void updateStatus(MatchPostStatus status) {
+        if (this.status == status) {
+            return; // 동일 상태면 무시
+        }
+        if (this.status == MatchPostStatus.CLOSED && status == MatchPostStatus.OPEN) {
+            throw new IllegalStateException("마감된 매치는 다시 열 수 없습니다.");
+        }
+        this.status = status;
+    }
+
+    public void updateOpponent(Long acceptedApplicationId) {
+        this.acceptedApplicationId = acceptedApplicationId;
+    }
 }

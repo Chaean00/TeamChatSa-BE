@@ -10,7 +10,10 @@ import lombok.*;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "team_member")
+@Table(name = "team_member", uniqueConstraints = {
+        @UniqueConstraint(name = "unique_team_user", columnNames = {"user_id"}),
+        @UniqueConstraint(name = "unique_team_team_user", columnNames = {"team_id", "user_id"})
+})
 public class TeamMember extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
