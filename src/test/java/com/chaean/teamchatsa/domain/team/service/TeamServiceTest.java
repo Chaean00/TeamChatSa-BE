@@ -53,7 +53,7 @@ class TeamServiceTest {
         void success() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "BEGINNER");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "하하");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
             given(teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)).willReturn(false);
 
@@ -70,7 +70,7 @@ class TeamServiceTest {
         void fail_already_joined() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "BEGINNER");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중하");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(true);
 
             // when
@@ -85,7 +85,7 @@ class TeamServiceTest {
         void fail_already_leader() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "BEGINNER");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중상");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
             given(teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)).willReturn(true);
 
