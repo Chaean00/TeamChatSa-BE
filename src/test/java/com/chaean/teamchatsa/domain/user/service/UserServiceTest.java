@@ -55,8 +55,8 @@ class UserServiceTest {
 			UserRes result = userService.findUser(1L);
 
 			//then
-			assertThat(result.id()).isEqualTo(1L);
-			assertThat(result.name()).isEqualTo("테스터");
+			assertThat(result.getId()).isEqualTo(1L);
+			assertThat(result.getName()).isEqualTo("테스터");
 			verify(userRepo).findByIdAndIsDeletedFalse(1L);
 			verify(authRepo).existsByUserIdAndIsDeletedFalse(1L);
 		}
@@ -75,10 +75,10 @@ class UserServiceTest {
 			UserRes result = userService.findUser(2L);
 
 			//then
-			assertThat(oAuthAccount.getUserId()).isEqualTo(result.id());
+			assertThat(oAuthAccount.getUserId()).isEqualTo(result.getId());
 			assertThat(result.isLocalAccount()).isFalse();
-			assertThat(result.id()).isEqualTo(2L);
-			assertThat(result.name()).isEqualTo("테스터");
+			assertThat(result.getId()).isEqualTo(2L);
+			assertThat(result.getName()).isEqualTo("테스터");
 			verify(userRepo).findByIdAndIsDeletedFalse(2L);
 			verify(authRepo).existsByUserIdAndIsDeletedFalse(2L);
 		}

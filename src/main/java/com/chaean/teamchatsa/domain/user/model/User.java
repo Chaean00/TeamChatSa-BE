@@ -66,9 +66,9 @@ public class User extends DeleteAndTimeEntity {
     }
 
     public void update(UserUpdateReq req) {
-        if (req.nickname() != null) nickname = req.nickname();
-        if (req.position() != null) position = req.position();
-        if (req.phone() != null) phone = req.phone();
+        if (req.getNickname() != null) nickname = req.getNickname();
+        if (req.getPosition() != null) position = req.getPosition();
+        if (req.getPhone() != null) phone = req.getPhone();
     }
 
     public void updatePassword(String passwordHash) {

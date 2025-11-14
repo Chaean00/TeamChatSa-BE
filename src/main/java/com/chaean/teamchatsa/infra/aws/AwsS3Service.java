@@ -44,12 +44,12 @@ public class AwsS3Service {
 	public PresignUploadRes presignUpload(PresignUploadReq req, Long userId) {
 		validate(req);
 
-		String key = buildObjectKey(req.fileName(), userId);
+		String key = buildObjectKey(req.getFileName(), userId);
 
 		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
 				.bucket(bucketName)
 				.key(key)
-				.contentType(req.contentType()) // 서명에 포함되므로 클라이언트 PUT과 동일해야 함
+				.contentType(req.getContentType()) // 서명에 포함되므로 클라이언트 PUT과 동일해야 함
 				.build();
 
 		PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -64,31 +64,12 @@ public class AwsS3Service {
 		return new PresignUploadRes(key, url.toString(), expireSeconds);
 	}
 
-	@Loggable
-	/** 다운로드용 Presigned URL 발급 (private 객체 접근) */
-	public PresignDownloadRes presignDownload(String key) {
-		GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-				.bucket(bucketName)
-				.key(key)
-				.build();
-
-		GetObjectPresignRequest getPresignRequest = GetObjectPresignRequest.builder()
-				.signatureDuration(Duration.ofSeconds(expireSeconds + 300)) // 다운로드는 더 길게
-				.getObjectRequest(getObjectRequest)
-				.build();
-
-		PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getPresignRequest);
-		URL url = presignedGetObjectRequest.url();
-
-		return new PresignDownloadRes(url.toString(), expireSeconds);
-	}
-
 	private void validate(PresignUploadReq req) {
-		if (req.fileName() == null || req.fileName().isBlank()) {
+		if (req.getFileName() == null || req.getFileName().isBlank()) {
 			throw new IllegalArgumentException("파일 이름(fileName)은 필수 값입니다.");
 		}
-		if (req.contentType() == null || !ALLOWED_CONTENT_TYPES.contains(req.contentType())) {
-			throw new IllegalArgumentException("지원하지 않는 파일 형식입니다: " + req.contentType());
+		if (req.getContentType() == null || !ALLOWED_CONTENT_TYPES.contains(req.getContentType())) {
+			throw new IllegalArgumentException("지원하지 않는 파일 형식입니다: " + req.getContentType());
 		}
 	}
 

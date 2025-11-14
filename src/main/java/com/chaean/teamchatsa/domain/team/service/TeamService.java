@@ -47,13 +47,13 @@ public class TeamService {
 		// TODO : of 패턴으로 전환
 		Team team = Team.builder()
 				.leaderUserId(userId)
-				.name(req.name())
-				.area(req.area())
-				.description(req.description())
-				.contactType(req.contactType())
-				.contact(req.contact())
-				.img(req.imgUrl())
-				.level(req.level())
+				.name(req.getName())
+				.area(req.getArea())
+				.description(req.getDescription())
+				.contactType(req.getContactType())
+				.contact(req.getContact())
+				.img(req.getImgUrl())
+				.level(req.getLevel())
 				.build();
 
 		teamRepo.save(team);
@@ -98,7 +98,7 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
 		}
 
-		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.message()));
+		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.getMessage()));
 	}
 
 	@Transactional

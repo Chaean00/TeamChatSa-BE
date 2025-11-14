@@ -8,6 +8,8 @@ import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.service.TeamService;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -19,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 
+@Tag(name = "팀 API", description = "팀 생성/조회 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/teams")
@@ -26,7 +29,7 @@ public class TeamController {
 
 	private final TeamService teamService;
 
-	/** 팀 생성 */
+	@Operation(summary = "팀 생성 API", description = "새로운 팀을 생성합니다.")
 	@PostMapping("")
 	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal Long userId, @RequestBody @Validated TeamCreateReq req) {
 		teamService.registerTeam(userId, req);
@@ -34,7 +37,7 @@ public class TeamController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
 	}
 
-	/** 팀 목록 조회 (무한 스크롤) */
+	@Operation(summary = "팀 목록 조회 API", description = "팀 목록을 페이징 처리하여 조회합니다. (무한스크롤)")
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<Slice<TeamListRes>>> getTeamList(
 			@RequestParam(defaultValue = "0") int page,
@@ -44,13 +47,13 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.success(res));
 	}
 
-	/** 팀 상세 조회 */
+	@Operation(summary = "팀 상세 조회 API", description = "특정 팀의 상세 정보를 조회합니다.")
 	@GetMapping("/{teamId}")
 	public ResponseEntity<ApiResponse<TeamDetailRes>> getTeamDetail(@PathVariable Long teamId) {
 		return ResponseEntity.ok(ApiResponse.success(teamService.findTeamDetail(teamId)));
 	}
 
-	/** 팀 가입 신청 */
+	@Operation(summary = "팀 가입 신청 API", description = "특정 팀에 가입 신청을 합니다.")
 	@PostMapping("/{teamId}/join")
 	public ResponseEntity<ApiResponse<Void>> joinTeam(
 			@PathVariable Long teamId,
@@ -60,7 +63,7 @@ public class TeamController {
 		return ResponseEntity.status(HttpStatus.CREATED).body( ApiResponse.success("팀 가입 신청이 완료되었습니다.", null));
 	}
 
-	/** 팀 삭제 - LEADER만 가능 */
+	@Operation(summary = "팀 삭제 API", description = "특정 팀을 삭제합니다. (팀장만 가능)")
 	@DeleteMapping("/{teamId}")
 	@RequireTeamRole(TeamRole.LEADER)
 	public ResponseEntity<ApiResponse<Void>> deleteTeam(@PathVariable Long teamId) {

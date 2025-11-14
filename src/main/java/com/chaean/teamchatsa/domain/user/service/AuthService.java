@@ -32,22 +32,22 @@ public class AuthService {
 	@Transactional
 	@Loggable
 	public void signup(SignupReq req) {
-		Optional<User> existsUser = userRepo.findByEmail(req.email());
+		Optional<User> existsUser = userRepo.findByEmail(req.getEmail());
 		if (existsUser.isPresent() && existsUser.get().isDeleted()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 탈퇴한 이메일입니다.");
 		if (existsUser.isPresent()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
-		if (req.password().length() < 8) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
+		if (req.getPassword().length() < 8) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 
-		if (req.phone() != null) {
-			boolean existsPhone = userRepo.existsByPhoneAndIsDeletedFalse(req.phone());
+		if (req.getPhone() != null) {
+			boolean existsPhone = userRepo.existsByPhoneAndIsDeletedFalse(req.getPhone());
 			if (existsPhone) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 회원가입을 진행한 핸드폰 번호입니다.");
 		}
 
 		User user = User.builder()
-				.username(req.userName())
-				.email(req.email())
-				.password(encoder.encode(req.password()))
-				.position(req.position())
-				.phone(req.phone())
+				.username(req.getUserName())
+				.email(req.getEmail())
+				.password(encoder.encode(req.getPassword()))
+				.position(req.getPosition())
+				.phone(req.getPhone())
 				.build();
 
 		userRepo.save(user);
@@ -56,9 +56,9 @@ public class AuthService {
 	@Transactional
 	@Loggable
 	public LoginRes login(LoginReq req) {
-		Optional<User> user = userRepo.findByEmailAndIsDeletedFalse(req.email());
+		Optional<User> user = userRepo.findByEmailAndIsDeletedFalse(req.getEmail());
 
-		if (user.isEmpty() || !encoder.matches(req.password(), user.get().getPassword())) {
+		if (user.isEmpty() || !encoder.matches(req.getPassword(), user.get().getPassword())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "잘못된 로그인 정보입니다.");
 		}
 
