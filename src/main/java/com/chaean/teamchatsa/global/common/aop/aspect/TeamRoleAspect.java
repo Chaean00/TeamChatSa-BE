@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 
 /**
- * @RequireTeamRole 어노테이션이 붙은 메서드에 대한 팀 역할 기반 접근 제어를 처리하는 Aspect입니다.
+ * @RequireTeamRole 어노테이션이 붙은 메서드에 대한 팀 역할 기반 접근 제어를 처리하는 Aspect.
  * SecurityContext에서 userId를 추출하여 사용자의 팀 권한을 검증합니다.
  */
 @Slf4j
@@ -28,10 +28,7 @@ public class TeamRoleAspect {
 
 	private final TeamMemberRepository teamMemberRepository;
 
-	/**
-	 * @RequireTeamRole 어노테이션이 붙은 메서드 실행 전에 팀 역할을 검증
-	 * userId는 파라미터에서 찾지 못하면 SecurityContext에서 자동으로 추출
-	 */
+	/** @RequireTeamRole 어노테이션이 붙은 메서드 실행 전에 팀 역할을 검증 */
 	@Before("@annotation(requireTeamRole)")
 	public void checkTeamRole(RequireTeamRole requireTeamRole) {
 		Long userId = getUserIdFromSecurityContext();
@@ -41,7 +38,7 @@ public class TeamRoleAspect {
 				.findByUserIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> {
 					log.warn("[권한 검증 실패] 팀에 소속되지 않은 사용자입니다. userId: {}", userId);
-					return new BusinessException(ErrorCode.NOT_TEAM_MEMBER);
+					return new BusinessException(ErrorCode.NOT_TEAM_MEMBER, "팀에 소속되지 않은 사용자입니다.");
 				});
 
 		TeamRole userRole = teamMember.getRole();
@@ -60,7 +57,7 @@ public class TeamRoleAspect {
 		log.info("[팀 권한 검증 성공] userId: {}, 역할: {}", userId, userRole);
 	}
 
-	/** SecurityContext에서 현재 인증된 사용자의 userId를 추출 */
+	/** SecurityContext 에서 현재 인증된 사용자의 userId를 추출 */
 	private Long getUserIdFromSecurityContext() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

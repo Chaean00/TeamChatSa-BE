@@ -33,4 +33,8 @@ public class TeamMember extends DeleteAndTimeEntity {
     @Column(name = "role", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private TeamRole role = TeamRole.MEMBER;
+
+    public void updateRole(TeamRole role) {
+        this.role = role;
+    }
 }

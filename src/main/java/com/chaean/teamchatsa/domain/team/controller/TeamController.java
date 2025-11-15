@@ -4,6 +4,7 @@ import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateReq;
 import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberRes;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.service.TeamService;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
@@ -19,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Tag(name = "팀 API", description = "팀 생성/조회 관련 API")
@@ -70,6 +73,24 @@ public class TeamController {
 		teamService.deleteTeam(teamId);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiResponse.success("팀이 삭제되었습니다.", null));
 	}
+
+	@Operation(summary = "팀원 목록 조회 API", description = "특정 팀의 팀원 목록을 조회합니다.")
+	@GetMapping("/{teamId}/members")
+	public ResponseEntity<ApiResponse<List<TeamMemberRes>>> getTeamMembers(@PathVariable Long teamId) {
+		List<TeamMemberRes> res = teamService.findTeamMembers(teamId);
+		return ResponseEntity.ok(ApiResponse.success(res));
+	}
+
+	@PatchMapping("/{teamId}/members/{userId}/role")
+	@RequireTeamRole(TeamRole.LEADER)
+	public ResponseEntity<ApiResponse<Void>> changeMemberRole(
+			@PathVariable Long teamId,
+			@PathVariable Long userId,
+			@RequestParam TeamRole newRole) {
+		teamService.changeMemberRole(teamId, userId, newRole);
+		return ResponseEntity.ok(ApiResponse.success("팀원 역할이 변경되었습니다.", null));
+	}
+
 
 	/** 팀 정보 수정 - LEADER 또는 CO_LEADER만 가능
 	@PutMapping("/{teamId}")
