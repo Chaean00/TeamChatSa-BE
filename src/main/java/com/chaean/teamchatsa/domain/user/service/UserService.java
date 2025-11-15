@@ -1,5 +1,7 @@
 package com.chaean.teamchatsa.domain.user.service;
 
+import com.chaean.teamchatsa.domain.team.model.TeamMember;
+import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateReq;
 import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
 import com.chaean.teamchatsa.domain.user.dto.response.UserRes;
@@ -23,6 +25,7 @@ import java.util.Objects;
 public class UserService {
 
 	private final UserRepository userRepo;
+	private final TeamMemberRepository teamMemberRepo;
 	private final OAuthAccountRepository authRepo;
 	private final PasswordEncoder encoder;
 
@@ -31,6 +34,8 @@ public class UserService {
 	public UserRes findUser(Long userId) {
 		User user = userRepo.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
+
+		TeamMember teamMember = teamMemberRepo.findByUserIdAndIsDeletedFalse(userId).orElse(null);
 
 		boolean isLinked = authRepo.existsByUserIdAndIsDeletedFalse(user.getId());
 
@@ -42,6 +47,8 @@ public class UserService {
 				.email(user.getEmail())
 				.nickname(user.getNickname())
 				.isLocalAccount(!isLinked)
+				.teamId(teamMember != null ? teamMember.getTeamId() : null)
+				.teamRole(teamMember != null ? teamMember.getRole() : null)
 				.build();
 	}
 

@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.domain.user.dto.response;
 
 import com.chaean.teamchatsa.domain.team.model.Position;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,4 +19,6 @@ public class UserRes {
 	private Position position;
 	private String nickname;
 	private boolean isLocalAccount;
+	private Long teamId;
+	private TeamRole teamRole;
 }
