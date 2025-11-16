@@ -2,6 +2,7 @@ package com.chaean.teamchatsa.domain.match.controller;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
 import com.chaean.teamchatsa.domain.match.service.MatchService;
@@ -17,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "매치 API", description = "매치 글 관련 API")
 @RestController
@@ -112,5 +115,27 @@ public class MatchController {
 		String teamName = matchService.rejectMatchApplication(matchId, applicantId, userId);
 		String message = "매치 신청이 거절되었습니다. 팀명: " + teamName;
 		return ResponseEntity.ok(ApiResponse.success(message,null));
+	}
+
+	@Operation(summary = "매치 신청 팀 목록 조회 API", description = "특정 매치 게시물에 신청한 팀들의 목록을 조회합니다.")
+	@GetMapping("/{matchId}/applicants")
+	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
+	public ResponseEntity<ApiResponse<List<MatchApplicantRes>>> getMatchApplicants(
+			@PathVariable Long matchId,
+			@AuthenticationPrincipal Long userId
+	) {
+		List<MatchApplicantRes> applicants = matchService.getMatchApplicants(userId, matchId);
+		return ResponseEntity.ok(ApiResponse.success("매치 신청 팀 목록 조회 성공", applicants));
+	}
+
+	@Operation(summary = "특정 팀의 매치 게시물 목록 조회 API", description = "특정 팀이 작성한 매치 게시물 목록을 조회합니다.")
+	@GetMapping("/{teamId}/team-posts")
+	public ResponseEntity<ApiResponse<Slice<MatchPostListRes>>> getMatchByTeamId(
+			@PathVariable Long teamId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size
+	) {
+		Slice<MatchPostListRes> matchPosts = matchService.findMatchPostListByTeamId(teamId, page, size);
+		return ResponseEntity.ok(ApiResponse.success("특정 팀의 매치 게시물 목록 조회 성공", matchPosts));
 	}
 }

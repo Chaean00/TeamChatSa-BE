@@ -7,3 +7,7 @@ ALTER TABLE "team_member"
 
 ALTER TABLE "match_application"
     ADD CONSTRAINT unique_match_post_team UNIQUE (post_id, applicant_team_id) DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "user"
+    ADD CONSTRAINT unique_user_email UNIQUE (email) DEFERRABLE INITIALLY IMMEDIATE,
+    ADD CONSTRAINT unique_user_nickname UNIQUE (nickname) DEFERRABLE INITIALLY IMMEDIATE

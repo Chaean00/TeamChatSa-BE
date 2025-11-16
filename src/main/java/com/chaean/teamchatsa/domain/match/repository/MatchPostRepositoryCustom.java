@@ -9,5 +9,9 @@ public interface MatchPostRepositoryCustom {
 
 	/** MatchPost 목록 조회 (커서 기반 페이징) */
 	Slice<MatchPostListRes> findMatchPostListWithPagination(Pageable pageable);
+
+	/** 특정 팀의 MatchPost 목록 조회 (커서 기반 페이징) */
+	Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, Pageable pageable);
+
 	MatchPostDetailRes findMatchPostDetailById(Long matchId);
 }
