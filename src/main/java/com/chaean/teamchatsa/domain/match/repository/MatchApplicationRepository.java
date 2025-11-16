@@ -11,5 +11,5 @@ public interface MatchApplicationRepository extends JpaRepository<MatchApplicati
 	Optional<MatchApplication> findByPostIdAndApplicantTeamId(Long matchId, Long teamId);
 	List<MatchApplication> findAllByPostIdAndStatus(Long matchId, MatchApplicationStatus status);
 	boolean existsByPostIdAndApplicantTeamId(Long matchId, Long teamId);
-	boolean existsByPostIdAndStatus(Long matchId, MatchApplicationStatus status);
+	Long countByPostId(Long matchId);
 }

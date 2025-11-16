@@ -2,7 +2,6 @@ package com.chaean.teamchatsa.domain.team.controller;
 
 import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateReq;
 import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
-import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberRes;
@@ -85,7 +84,6 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.success(res));
 	}
 
-	@Operation(summary = "팀원 역할 변경 API", description = "팀원의 역할을 변경합니다. (팀장만 가능)")
 	@PatchMapping("/{teamId}/members/{userId}/role")
 	@RequireTeamRole(TeamRole.LEADER)
 	public ResponseEntity<ApiResponse<Void>> changeMemberRole(
@@ -96,37 +94,6 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.success("팀원 역할이 변경되었습니다.", null));
 	}
 
-	@Operation(summary = "팀 가입 신청 목록 조회 API", description = "팀에 들어온 가입 신청 목록을 조회합니다. (팀장/부팀장만 가능)")
-	@GetMapping("/{teamId}/applications")
-	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
-	public ResponseEntity<ApiResponse<List<TeamApplicationRes>>> getTeamApplications(
-			@PathVariable Long teamId,
-			@AuthenticationPrincipal Long userId) {
-		List<TeamApplicationRes> applications = teamService.findTeamApplications(teamId, userId);
-		return ResponseEntity.ok(ApiResponse.success("팀 가입 신청 목록 조회 성공", applications));
-	}
-
-	@Operation(summary = "팀 가입 신청 수락 API", description = "팀 가입 신청을 수락하고 팀원으로 추가합니다. (팀장/부팀장만 가능)")
-	@PostMapping("/{teamId}/applications/{applicationId}/accept")
-	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
-	public ResponseEntity<ApiResponse<Void>> acceptTeamApplication(
-			@PathVariable Long teamId,
-			@PathVariable Long applicationId,
-			@AuthenticationPrincipal Long userId) {
-		teamService.acceptTeamApplication(teamId, applicationId, userId);
-		return ResponseEntity.ok(ApiResponse.success("팀 가입 신청이 수락되었습니다.", null));
-	}
-
-	@Operation(summary = "팀 가입 신청 거절 API", description = "팀 가입 신청을 거절합니다. (팀장/부팀장만 가능)")
-	@PostMapping("/{teamId}/applications/{applicationId}/reject")
-	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
-	public ResponseEntity<ApiResponse<Void>> rejectTeamApplication(
-			@PathVariable Long teamId,
-			@PathVariable Long applicationId,
-			@AuthenticationPrincipal Long userId) {
-		teamService.rejectTeamApplication(teamId, applicationId, userId);
-		return ResponseEntity.ok(ApiResponse.success("팀 가입 신청이 거절되었습니다.", null));
-	}
 
 	/** 팀 정보 수정 - LEADER 또는 CO_LEADER만 가능
 	@PutMapping("/{teamId}")
