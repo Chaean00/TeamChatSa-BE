@@ -16,7 +16,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "\"user\"")
+@Table(name = "\"user\"", uniqueConstraints = {
+        @UniqueConstraint(name = "uc_user_nickname", columnNames = {"nickname"}),
+        @UniqueConstraint(name = "uc_user_email", columnNames = {"email"})
+})
 public class User extends DeleteAndTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

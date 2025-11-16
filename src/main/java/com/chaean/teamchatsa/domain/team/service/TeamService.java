@@ -78,13 +78,17 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public TeamDetailRes findTeamDetail(Long teamId) {
+	public TeamDetailRes findTeamDetail(Long teamId, Long userId) {
 		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
 
-		return TeamDetailRes.fromEntity(team, memberCount);
+		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)
+				.orElse(null);
+		TeamRole userRole = teamMember != null ? teamMember.getRole() : null;
+
+		return TeamDetailRes.fromEntity(team, userRole, memberCount);
 	}
 
 	@Transactional

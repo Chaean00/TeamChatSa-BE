@@ -2,6 +2,7 @@ package com.chaean.teamchatsa.domain.match.service;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
 import com.chaean.teamchatsa.domain.match.model.*;
@@ -78,6 +79,18 @@ public class MatchService {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
 
 		return matchPostRepo.findMatchPostListWithPagination(pageable);
+	}
+
+	/** 특정 팀의 매치 게시물 목록 조회 */
+	@Transactional(readOnly = true)
+	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
+		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
+			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
+		}
+
+		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
+
+		return matchPostRepo.findMatchPostListByTeamId(teamId, pageable);
 	}
 
 	/** 매치 게시물 상세 조회 */
@@ -217,5 +230,18 @@ public class MatchService {
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
 		return team.getName();
+	}
+
+	@Transactional(readOnly = true)
+	public List<MatchApplicantRes> getMatchApplicants(Long userId, Long matchId) {
+		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
+
+		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		if (teamId == null || !matchPost.getTeamId().equals(teamId)) {
+			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 신청 목록을 조회할 권한이 없습니다.");
+		}
+
+		return matchApplicationRepo.findApplicantsByMatchIdWithTeamInfo(matchId);
 	}
 }

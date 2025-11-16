@@ -52,8 +52,11 @@ public class TeamController {
 
 	@Operation(summary = "팀 상세 조회 API", description = "특정 팀의 상세 정보를 조회합니다.")
 	@GetMapping("/{teamId}")
-	public ResponseEntity<ApiResponse<TeamDetailRes>> getTeamDetail(@PathVariable Long teamId) {
-		return ResponseEntity.ok(ApiResponse.success(teamService.findTeamDetail(teamId)));
+	public ResponseEntity<ApiResponse<TeamDetailRes>> getTeamDetail(
+			@PathVariable Long teamId,
+			@AuthenticationPrincipal Long userId
+	) {
+		return ResponseEntity.ok(ApiResponse.success(teamService.findTeamDetail(teamId, userId)));
 	}
 
 	@Operation(summary = "팀 가입 신청 API", description = "특정 팀에 가입 신청을 합니다.")

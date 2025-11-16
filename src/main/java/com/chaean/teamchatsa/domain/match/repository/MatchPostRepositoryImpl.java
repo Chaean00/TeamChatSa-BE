@@ -55,6 +55,38 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	}
 
 	@Override
+	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, Pageable pageable) {
+		QMatchPost mp = QMatchPost.matchPost;
+		QTeam t = QTeam.team;
+
+		List<MatchPostListRes> content = queryFactory
+				.select(Projections.constructor(
+						MatchPostListRes.class,
+						mp.id,
+						mp.title,
+						mp.placeName,
+						mp.matchDate,
+						t.name,
+						mp.address,
+						mp.status,
+						t.level
+				))
+				.from(mp)
+				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
+				.where(
+						mp.teamId.eq(teamId)
+								.and(mp.isDeleted.eq(false))
+				)
+				.orderBy(mp.createdAt.desc(), mp.id.desc())
+				.offset(pageable.getOffset())
+				.limit(pageable.getPageSize() + 1)  // hasNext 판단용
+				.fetch();
+
+		// Slice 생성 (무한 스크롤)
+		return createSlice(content, pageable);
+	}
+
+	@Override
 	public MatchPostDetailRes findMatchPostDetailById(Long matchId) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
