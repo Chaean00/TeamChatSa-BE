@@ -65,12 +65,12 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 게시물을 삭제할 권한이 없습니다.");
 		}
 
-		long applicationCount = matchApplicationRepo.countByPostId(matchId);
-		if (applicationCount > 0) {
+		boolean existsApplication = matchApplicationRepo.existsByPostIdAndStatus(matchId, MatchApplicationStatus.PENDING);
+		if (existsApplication) {
 			throw new BusinessException(ErrorCode.INVALID_STATE, "신청이 있는 매치는 삭제할 수 없습니다.");
 		}
 
-		matchPostRepo.delete(matchPost);
+		matchPost.softDelete();
 	}
 
 	/** 매치 게시물 목록 조회 */
