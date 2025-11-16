@@ -45,4 +45,8 @@ public class TeamApplication extends TimeEntity {
 				.message(message)
 				.build();
 	}
+
+	public void updateStatus(JoinStatus status) {
+		this.status = status;
+	}
 }
