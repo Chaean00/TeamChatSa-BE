@@ -76,7 +76,13 @@ public class MatchService {
 	/** 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
 	public Slice<MatchPostListRes> findMatchPostList(int page, int size) {
-		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
+		// 추후에 동적 정렬 조건 설정 가능
+		Sort sort = Sort.by(
+				Sort.Order.asc("createdAt"),
+				Sort.Order.desc("id")
+		);
+
+		Pageable pageable = PageRequest.of(page, size, sort);
 
 		return matchPostRepo.findMatchPostListWithPagination(pageable);
 	}

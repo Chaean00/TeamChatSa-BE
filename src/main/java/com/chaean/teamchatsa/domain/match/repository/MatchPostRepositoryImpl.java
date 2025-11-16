@@ -2,23 +2,24 @@ package com.chaean.teamchatsa.domain.match.repository;
 
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
+import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
 import com.chaean.teamchatsa.domain.match.model.QMatchPost;
 import com.chaean.teamchatsa.domain.team.model.QTeam;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MatchPost QueryDSL 구현체
- * - 네이밍: MatchPostRepositoryImpl (Spring이 자동 인식)
- * - @Repository 필수
- */
+/** MatchPost QueryDSL 구현체 */
 @Repository
 @RequiredArgsConstructor
 public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
@@ -44,8 +45,12 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 				))
 				.from(mp)
 				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
-				.where(mp.isDeleted.eq(false))
-				.orderBy(mp.createdAt.desc(), mp.id.desc())
+				.where(
+						mp.isDeleted.eq(false)
+								.and(mp.status.eq(MatchPostStatus.OPEN))
+								.and(mp.matchDate.goe(LocalDateTime.now()))
+				)
+				.orderBy(getSortOrder(pageable, mp))
 				.offset(pageable.getOffset())
 				.limit(pageable.getPageSize() + 1)  // hasNext 판단용
 				.fetch();
@@ -127,5 +132,47 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 			hasNext = true;
 		}
 		return new SliceImpl<>(content, pageable, hasNext);
+	}
+
+	/** Pageable의 Sort를 QueryDSL OrderSpecifier로 변환하는 헬퍼 메서드 */
+	private OrderSpecifier<?>[] getSortOrder(Pageable pageable, QMatchPost mp) {
+		List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+		if (pageable.getSort().isSorted()) {
+			for (Sort.Order order : pageable.getSort()) {
+				OrderSpecifier<?> orderSpecifier = createOrderSpecifier(order, mp);
+				if (orderSpecifier != null) {
+					orders.add(orderSpecifier);
+				}
+			}
+		}
+
+		// 정렬 조건이 없으면 기본 정렬 적용
+		if (orders.isEmpty()) {
+			orders.add(mp.matchDate.asc());
+			orders.add(mp.id.asc());
+		}
+
+		return orders.toArray(new OrderSpecifier[0]);
+	}
+
+	/** Sort.Order를 OrderSpecifier로 변환 */
+	private OrderSpecifier<?> createOrderSpecifier(Sort.Order order, QMatchPost mp) {
+		String property = order.getProperty();
+		boolean isAsc = order.isAscending();
+
+		switch (property) {
+			case "matchDate":
+				return isAsc ? mp.matchDate.asc() : mp.matchDate.desc();
+			case "createdAt":
+				return isAsc ? mp.createdAt.asc() : mp.createdAt.desc();
+			case "id":
+				return isAsc ? mp.id.asc() : mp.id.desc();
+			case "title":
+				return isAsc ? mp.title.asc() : mp.title.desc();
+			default:
+				// 지원하지 않는 필드는 무시
+				return null;
+		}
 	}
 }
