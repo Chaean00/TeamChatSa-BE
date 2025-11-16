@@ -2,10 +2,10 @@ package com.chaean.teamchatsa.domain.team.service;
 
 import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateReq;
 import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
-import com.chaean.teamchatsa.domain.team.model.ContactType;
-import com.chaean.teamchatsa.domain.team.model.Team;
+import com.chaean.teamchatsa.domain.team.model.*;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -323,6 +324,475 @@ class TeamServiceTest {
             assertThatThrownBy(() -> teamService.deleteTeam(teamId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("팀 가입 신청 목록 조회")
+    class FindTeamApplications {
+        @Test
+        @DisplayName("성공 - 팀장이 조회")
+        void success_as_leader() {
+            // given
+            Long teamId = 1L;
+            Long userId = 1L;
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+            List<TeamApplicationRes> expected = Collections.emptyList();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING))
+                    .willReturn(expected);
+
+            // when
+            List<TeamApplicationRes> result = teamService.findTeamApplications(teamId, userId);
+
+            // then
+            assertThat(result).isEqualTo(expected);
+            verify(teamRepo).existsByIdAndIsDeletedFalse(teamId);
+            verify(teamMemberRepo).findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId);
+            verify(teamJoinRequestRepo).findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("성공 - 부팀장이 조회")
+        void success_as_co_leader() {
+            // given
+            Long teamId = 1L;
+            Long userId = 2L;
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.CO_LEADER)
+                    .build();
+            List<TeamApplicationRes> expected = Collections.emptyList();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING))
+                    .willReturn(expected);
+
+            // when
+            List<TeamApplicationRes> result = teamService.findTeamApplications(teamId, userId);
+
+            // then
+            assertThat(result).isEqualTo(expected);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 팀")
+        void fail_team_not_found() {
+            // given
+            Long teamId = 1L;
+            Long userId = 1L;
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.findTeamApplications(teamId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 팀 멤버가 아님")
+        void fail_not_team_member() {
+            // given
+            Long teamId = 1L;
+            Long userId = 1L;
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.empty());
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.findTeamApplications(teamId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("해당 팀의 멤버가 아닙니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 일반 멤버 권한 없음")
+        void fail_no_permission() {
+            // given
+            Long teamId = 1L;
+            Long userId = 3L;
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.MEMBER)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.findTeamApplications(teamId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("팀 가입 신청 목록을 조회할 권한이 없습니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("팀 가입 신청 수락")
+    class AcceptTeamApplication {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+            Long applicantUserId = 2L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication application = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(applicantUserId)
+                    .status(JoinStatus.PENDING)
+                    .message("가입 신청합니다")
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(application));
+            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(false);
+            given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
+                    .willReturn(List.of());
+
+            // when
+            teamService.acceptTeamApplication(teamId, applicationId, userId);
+
+            // then
+            assertThat(application.getStatus()).isEqualTo(JoinStatus.ACCEPTED);
+            verify(teamMemberRepo).save(any(TeamMember.class));
+            verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId);
+        }
+
+        @Test
+        @DisplayName("성공 - 다른 팀의 PENDING 신청 자동 거절")
+        void success_with_auto_reject_other_applications() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+            Long applicantUserId = 2L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication acceptedApplication = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(applicantUserId)
+                    .status(JoinStatus.PENDING)
+                    .message("가입 신청합니다")
+                    .build();
+
+            // 다른 팀에 넣은 PENDING 신청들
+            TeamApplication otherApplication1 = TeamApplication.builder()
+                    .id(101L)
+                    .teamId(2L)
+                    .userId(applicantUserId)
+                    .status(JoinStatus.PENDING)
+                    .build();
+
+            TeamApplication otherApplication2 = TeamApplication.builder()
+                    .id(102L)
+                    .teamId(3L)
+                    .userId(applicantUserId)
+                    .status(JoinStatus.PENDING)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(acceptedApplication));
+            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(false);
+            given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
+                    .willReturn(List.of(otherApplication1, otherApplication2));
+
+            // when
+            teamService.acceptTeamApplication(teamId, applicationId, userId);
+
+            // then
+            assertThat(acceptedApplication.getStatus()).isEqualTo(JoinStatus.ACCEPTED);
+            assertThat(otherApplication1.getStatus()).isEqualTo(JoinStatus.REJECTED);
+            assertThat(otherApplication2.getStatus()).isEqualTo(JoinStatus.REJECTED);
+            verify(teamMemberRepo).save(any(TeamMember.class));
+            verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 팀")
+        void fail_team_not_found() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없음")
+        void fail_no_permission() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 3L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.MEMBER)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("팀 가입 신청을 수락할 권한이 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 가입 신청")
+        void fail_application_not_found() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.empty());
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 가입 신청입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 처리된 신청")
+        void fail_already_processed() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication application = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(2L)
+                    .status(JoinStatus.ACCEPTED)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(application));
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("이미 처리된 가입 신청입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 신청자가 이미 다른 팀에 가입됨")
+        void fail_already_member() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+            Long applicantUserId = 2L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication application = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(applicantUserId)
+                    .status(JoinStatus.PENDING)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(application));
+            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(true);
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("이미 다른 팀에 가입된 사용자입니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("팀 가입 신청 거절")
+    class RejectTeamApplication {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication application = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(2L)
+                    .status(JoinStatus.PENDING)
+                    .message("가입 신청합니다")
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(application));
+
+            // when
+            teamService.rejectTeamApplication(teamId, applicationId, userId);
+
+            // then
+            assertThat(application.getStatus()).isEqualTo(JoinStatus.REJECTED);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 팀")
+        void fail_team_not_found() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.rejectTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("존재하지 않는 팀입니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없음")
+        void fail_no_permission() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 3L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.MEMBER)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.rejectTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("팀 가입 신청을 거절할 권한이 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 처리된 신청")
+        void fail_already_processed() {
+            // given
+            Long teamId = 1L;
+            Long applicationId = 100L;
+            Long userId = 1L;
+
+            TeamMember teamMember = TeamMember.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(TeamRole.LEADER)
+                    .build();
+
+            TeamApplication application = TeamApplication.builder()
+                    .id(applicationId)
+                    .teamId(teamId)
+                    .userId(2L)
+                    .status(JoinStatus.REJECTED)
+                    .build();
+
+            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(teamMember));
+            given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+                    .willReturn(Optional.of(application));
+
+            // when
+            // then
+            assertThatThrownBy(() -> teamService.rejectTeamApplication(teamId, applicationId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("이미 처리된 가입 신청입니다.");
         }
     }
 }
