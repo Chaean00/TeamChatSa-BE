@@ -53,9 +53,9 @@ class TeamServiceTest {
         void success() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "하하");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
-            given(teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)).willReturn(false);
+            given(teamRepo.existsByNameAndIsDeletedFalse(req.getName())).willReturn(false);
 
             // when
             teamService.registerTeam(userId, req);
@@ -70,7 +70,7 @@ class TeamServiceTest {
         void fail_already_joined() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중하");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(true);
 
             // when
@@ -81,19 +81,19 @@ class TeamServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 이미 리더인 팀이 존재")
-        void fail_already_leader() {
+        @DisplayName("실패 - 중복된 팀명 존재")
+        void fail_duplicate_team_name() {
             // given
             Long userId = 1L;
-            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl");
+            TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중상");
             given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
-            given(teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)).willReturn(true);
+            given(teamRepo.existsByNameAndIsDeletedFalse(req.getName())).willReturn(true);
 
             // when
             // then
             assertThatThrownBy(() -> teamService.registerTeam(userId, req))
                     .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("이미 리더로 존재하는 팀이 존재합니다.");
+                    .hasMessageContaining("이미 존재하는 팀명입니다.");
         }
     }
 
@@ -124,22 +124,53 @@ class TeamServiceTest {
     class FindTeamDetail {
 
         @Test
-        @DisplayName("성공")
-        void success() {
+        @DisplayName("성공 - 팀원인 경우")
+        void success_as_member() {
             // given
             Long teamId = 1L;
+            Long userId = 1L;
             Team team = Team.builder()
                     .id(teamId)
                     .name("teamName")
                     .build();
             given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
             given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.of(com.chaean.teamchatsa.domain.team.model.TeamMember.builder()
+                            .teamId(teamId)
+                            .userId(userId)
+                            .role(com.chaean.teamchatsa.domain.team.model.TeamRole.LEADER)
+                            .build()));
 
             // when
-            TeamDetailRes result = teamService.findTeamDetail(teamId);
+            TeamDetailRes result = teamService.findTeamDetail(teamId, userId);
 
             // then
-            assertThat(result.name()).isEqualTo("teamName");
+            assertThat(result.getName()).isEqualTo("teamName");
+            assertThat(result.getUserRole()).isEqualTo(com.chaean.teamchatsa.domain.team.model.TeamRole.LEADER);
+        }
+
+        @Test
+        @DisplayName("성공 - 팀원이 아닌 경우")
+        void success_not_member() {
+            // given
+            Long teamId = 1L;
+            Long userId = 2L;
+            Team team = Team.builder()
+                    .id(teamId)
+                    .name("teamName")
+                    .build();
+            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
+            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+                    .willReturn(Optional.empty());
+
+            // when
+            TeamDetailRes result = teamService.findTeamDetail(teamId, userId);
+
+            // then
+            assertThat(result.getName()).isEqualTo("teamName");
+            assertThat(result.getUserRole()).isNull();
         }
 
         @Test
@@ -147,11 +178,12 @@ class TeamServiceTest {
         void fail_not_found() {
             // given
             Long teamId = 1L;
+            Long userId = 1L;
             given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
 
             // when
             // then
-            assertThatThrownBy(() -> teamService.findTeamDetail(teamId))
+            assertThatThrownBy(() -> teamService.findTeamDetail(teamId, userId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("존재하지 않는 팀입니다.");
         }

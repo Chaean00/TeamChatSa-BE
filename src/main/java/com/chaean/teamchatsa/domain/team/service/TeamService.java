@@ -4,6 +4,7 @@ import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateReq;
 import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberRes;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
@@ -23,6 +24,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,25 +38,24 @@ public class TeamService {
 	@Transactional
 	@Loggable
 	public void registerTeam(Long userId, TeamCreateReq req) {
+		// 이미 가입한 팀이 있는지 체크
 		if (teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 가입한 팀이 존재합니다.");
 		}
-		if (teamRepo.existsByLeaderUserIdAndIsDeletedFalse(userId)) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 리더로 존재하는 팀이 존재합니다. 팀은 1개만 생성가능합니다.");
+		// 중복 팀명 체크
+		if (teamRepo.existsByNameAndIsDeletedFalse(req.getName())) {
+			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 팀명입니다.");
 		}
 
-		// TODO : 중복 팀명 체크
-
-		// TODO : of 패턴으로 전환
 		Team team = Team.builder()
 				.leaderUserId(userId)
-				.name(req.name())
-				.area(req.area())
-				.description(req.description())
-				.contactType(req.contactType())
-				.contact(req.contact())
-				.img(req.imgUrl())
-				.level(req.level())
+				.name(req.getName())
+				.area(req.getArea())
+				.description(req.getDescription())
+				.contactType(req.getContactType())
+				.contact(req.getContact())
+				.img(req.getImgUrl())
+				.level(req.getLevel())
 				.build();
 
 		teamRepo.save(team);
@@ -76,29 +78,41 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public TeamDetailRes findTeamDetail(Long teamId) {
+	public TeamDetailRes findTeamDetail(Long teamId, Long userId) {
 		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
 
-		return TeamDetailRes.fromEntity(team, memberCount);
+		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)
+				.orElse(null);
+		TeamRole userRole = teamMember != null ? teamMember.getRole() : null;
+
+		return TeamDetailRes.fromEntity(team, userRole, memberCount);
 	}
 
 	@Transactional
 	@Loggable
 	public void applyToTeam(Long teamId, Long userId, TeamJoinReq req) {
+		// 이미 가입한 팀이 있는지 체크
+		boolean alreadyMember = teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId);
+		if (alreadyMember) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 가입한 팀이 존재합니다.");
+		}
+
+		// 이미 가입 신청한 상태인지 체크
 		boolean exists = teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId);
 		if (exists) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 해당 팀에 가입 신청을 한 상태입니다.");
 		}
 
+		// 존재하는 팀인지 체크
 		boolean existsTeam = teamRepo.existsByIdAndIsDeletedFalse(teamId);
 		if (!existsTeam) {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
 		}
 
-		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.message()));
+		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.getMessage()));
 	}
 
 	@Transactional
@@ -115,5 +129,29 @@ public class TeamService {
 		}
 
 		team.softDelete();
+	}
+
+	@Transactional(readOnly = true)
+	@Loggable
+	public List<TeamMemberRes> findTeamMembers(Long teamId) {
+		// 존재하는 팀인지 체크
+		boolean existsTeam = teamRepo.existsByIdAndIsDeletedFalse(teamId);
+		if (!existsTeam) {
+			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
+		}
+
+		return teamMemberRepo.findTeamMembersByTeamId(teamId);
+	}
+
+	@Transactional
+	public void changeMemberRole(Long teamId, Long userId, TeamRole newRole) {
+		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀원입니다."));
+
+		if (teamMember.getRole() == newRole) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 동일한 역할이 설정되어 있습니다.");
+		}
+
+		teamMember.updateRole(newRole);
 	}
 }

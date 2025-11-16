@@ -1,18 +1,26 @@
 package com.chaean.teamchatsa.domain.team.dto.response;
 
 import com.chaean.teamchatsa.domain.team.model.Team;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record TeamDetailRes(
-		Long id,
-		Long leaderUserId,
-		String name,
-		String area,
-		String img,
-		String description,
-		Long memberCount,
-		String level
-) {
-	public static TeamDetailRes fromEntity(Team team, Long memberCount) {
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class TeamDetailRes {
+	private Long id;
+	private Long leaderUserId;
+	private String name;
+	private String area;
+	private String img;
+	private String description;
+	private Long memberCount;
+	private String level;
+	private TeamRole userRole;
+
+	public static TeamDetailRes fromEntity(Team team, TeamRole userRole, Long memberCount) {
 		return new TeamDetailRes(
 				team.getId(),
 				team.getLeaderUserId(),
@@ -21,7 +29,8 @@ public record TeamDetailRes(
 				team.getImg(),
 				team.getDescription(),
 				memberCount,
-				team.getLevel()
+				team.getLevel(),
+				userRole
 		);
 	}
 }

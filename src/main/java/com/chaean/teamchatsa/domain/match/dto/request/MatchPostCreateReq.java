@@ -2,32 +2,38 @@ package com.chaean.teamchatsa.domain.match.dto.request;
 
 import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-public record MatchPostCreateReq(
-		@NotNull
-		@Size(min = 1, max = 100)
-		String title,
-		@NotNull
-		String content,
-		@NotNull
-		@Future
-		LocalDateTime matchDate,
-		@NotNull
-		@Min(-90)
-		@Max(90)
-		double lat,
-		@NotNull
-		@Min(-180)
-		@Max(180)
-		double lng,
-		@NotNull
-		@Size(max = 255)
-		String address,
-		@Size(max = 120)
-		String placeName
-) {
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class MatchPostCreateReq {
+	@NotNull
+	@Size(min = 1, max = 100)
+	private String title;
+	@NotNull
+	private String content;
+	@NotNull
+	@Future
+	private LocalDateTime matchDate;
+	@NotNull
+	@Min(-90)
+	@Max(90)
+	private double lat;
+	@NotNull
+	@Min(-180)
+	@Max(180)
+	private double lng;
+	@NotNull
+	@Size(max = 255)
+	private String address;
+	@Size(max = 120)
+	private String placeName;
+
 	public MatchPost toEntity(Long teamId) {
 		return MatchPost.builder()
 				.teamId(teamId)

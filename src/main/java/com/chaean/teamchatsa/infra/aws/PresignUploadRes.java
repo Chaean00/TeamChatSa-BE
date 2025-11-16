@@ -1,8 +1,14 @@
 package com.chaean.teamchatsa.infra.aws;
 
-public record PresignUploadRes(
-		String key,
-		String url,
-		long expireSeconds
-) {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PresignUploadRes {
+	private String key;
+	private String url;
+	private long expireSeconds;
 }

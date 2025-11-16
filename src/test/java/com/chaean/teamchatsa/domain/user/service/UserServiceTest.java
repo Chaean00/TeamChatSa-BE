@@ -1,6 +1,9 @@
 package com.chaean.teamchatsa.domain.user.service;
 
 import com.chaean.teamchatsa.domain.team.model.Position;
+import com.chaean.teamchatsa.domain.team.model.TeamMember;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
+import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateReq;
 import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
 import com.chaean.teamchatsa.domain.user.dto.response.UserRes;
@@ -34,6 +37,8 @@ class UserServiceTest {
 	@Mock
 	private UserRepository userRepo;
 	@Mock
+	private TeamMemberRepository teamMemberRepo;
+	@Mock
 	private OAuthAccountRepository authRepo;
 	@Mock
 	private PasswordEncoder encoder;
@@ -49,15 +54,19 @@ class UserServiceTest {
 			//given
 			User user = new User(1L, "테스터", "테스터_닉네임", "abc@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
 			given(userRepo.findByIdAndIsDeletedFalse(1L)).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserIdAndIsDeletedFalse(1L)).willReturn(Optional.empty());
 			given(authRepo.existsByUserIdAndIsDeletedFalse(1L)).willReturn(false);
 
 			//when
 			UserRes result = userService.findUser(1L);
 
 			//then
-			assertThat(result.id()).isEqualTo(1L);
-			assertThat(result.name()).isEqualTo("테스터");
+			assertThat(result.getId()).isEqualTo(1L);
+			assertThat(result.getName()).isEqualTo("테스터");
+			assertThat(result.getTeamId()).isNull();
+			assertThat(result.getTeamRole()).isNull();
 			verify(userRepo).findByIdAndIsDeletedFalse(1L);
+			verify(teamMemberRepo).findByUserIdAndIsDeletedFalse(1L);
 			verify(authRepo).existsByUserIdAndIsDeletedFalse(1L);
 		}
 
@@ -67,19 +76,29 @@ class UserServiceTest {
 			//given
 			LocalDateTime now = LocalDateTime.now();
 			User user = new User(2L, "테스터", "테스터_닉네임", "abcd@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
+			TeamMember teamMember = TeamMember.builder()
+					.id(1L)
+					.teamId(10L)
+					.userId(2L)
+					.role(TeamRole.MEMBER)
+					.build();
 			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null, OAuthProvider.KAKAO);
 			given(userRepo.findByIdAndIsDeletedFalse(2L)).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserIdAndIsDeletedFalse(2L)).willReturn(Optional.of(teamMember));
 			given(authRepo.existsByUserIdAndIsDeletedFalse(2L)).willReturn(true);
 
 			//when
 			UserRes result = userService.findUser(2L);
 
 			//then
-			assertThat(oAuthAccount.getUserId()).isEqualTo(result.id());
+			assertThat(oAuthAccount.getUserId()).isEqualTo(result.getId());
 			assertThat(result.isLocalAccount()).isFalse();
-			assertThat(result.id()).isEqualTo(2L);
-			assertThat(result.name()).isEqualTo("테스터");
+			assertThat(result.getId()).isEqualTo(2L);
+			assertThat(result.getName()).isEqualTo("테스터");
+			assertThat(result.getTeamId()).isEqualTo(10L);
+			assertThat(result.getTeamRole()).isEqualTo(TeamRole.MEMBER);
 			verify(userRepo).findByIdAndIsDeletedFalse(2L);
+			verify(teamMemberRepo).findByUserIdAndIsDeletedFalse(2L);
 			verify(authRepo).existsByUserIdAndIsDeletedFalse(2L);
 		}
 
