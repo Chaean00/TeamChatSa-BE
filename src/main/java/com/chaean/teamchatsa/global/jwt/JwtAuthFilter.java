@@ -50,7 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         = new UsernamePasswordAuthenticationToken(user.get().getId(), null, List.of(new SimpleGrantedAuthority(user.get().getRole().name())));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException e) {
-                log.debug("유효하지 않은 토큰입니다. {}", e.getMessage(), e);
+                log.error("유효하지 않은 토큰입니다. {}", e.getMessage(), e);
                 res.setStatus(HttpStatus.UNAUTHORIZED.value());
                 res.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 res.setCharacterEncoding("UTF-8");

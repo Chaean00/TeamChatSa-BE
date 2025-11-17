@@ -26,7 +26,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                         AuthenticationException authException) throws IOException, ServletException {
 
         String requestURI = request.getRequestURI();
-        log.debug("인증 실패 요청: {} - {}", requestURI, authException.getMessage());
+        log.error("인증 실패 요청: {} - {}", requestURI, authException.getMessage());
 
         // API 요청인 경우 JSON 응답 반환
         if (requestURI.startsWith("/api/")) {
