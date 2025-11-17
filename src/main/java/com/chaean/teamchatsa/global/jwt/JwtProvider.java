@@ -24,7 +24,6 @@ public class JwtProvider {
     @Value("${app.jwt.refresh-days}")
     private long refreshDays;
 
-
     public String createAccessToken(Long userId) {
         Instant now = Instant.now();
 

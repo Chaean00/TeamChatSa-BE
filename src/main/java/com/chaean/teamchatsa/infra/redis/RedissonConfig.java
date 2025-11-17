@@ -1,4 +1,4 @@
-package com.chaean.teamchatsa.global.config;
+package com.chaean.teamchatsa.infra.redis;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

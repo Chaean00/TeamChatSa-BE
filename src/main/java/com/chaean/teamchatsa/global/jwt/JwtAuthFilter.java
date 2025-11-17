@@ -60,7 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 res.getWriter().write(mapper.writeValueAsString(apiResponse));
                 return; // 필터 체인 중단
             } catch (Exception e) {
-                log.error("JWT 인증 처리 중 오류: {}", e.getMessage(), e);
+                log.error("인증 처리 중 오류: {}", e.getMessage(), e);
 
                 res.setStatus(HttpStatus.UNAUTHORIZED.value());
                 res.setContentType(MediaType.APPLICATION_JSON_VALUE);

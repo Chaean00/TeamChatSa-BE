@@ -27,16 +27,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-	private final OAuthService oAuthService;
-
 	@Value("${app.auth.redirect-success}")
 	private String redirectSuccess;
-
 	@Value("${app.auth.redirect-failure}")
 	private String redirectFailure;
-
 	@Value("${spring.profiles.active:dev}")
 	private String activeProfile;
+	@Value("${app.jwt.refresh-days}")
+	private long refreshDays;
+	private final OAuthService oAuthService;
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -55,12 +54,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 		try {
 			TokenRes tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
-			// refresh Token 쿠카 설정
+			// refresh Token 쿠키 설정
 			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
-					.maxAge(Duration.ofDays(14))
+					.maxAge(Duration.ofDays(refreshDays))
 					.httpOnly(true)
 					.secure("prod".equals(activeProfile))       // 운영 HTTPS 필수
-					.sameSite("Lax")   // 다른 도메인으로 리다이렉트한다면 None 필요
+					.sameSite("prod".equals(activeProfile) ? "None" : "Lax")   // 다른 도메인으로 리다이렉트한다면 None 필요
 					.path("/")
 					.build();
 
