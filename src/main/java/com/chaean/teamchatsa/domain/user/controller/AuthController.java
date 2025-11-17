@@ -28,9 +28,10 @@ import java.time.Duration;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-
 	@Value("${spring.profiles.active:dev}")
 	private String activeProfile;
+	@Value("${app.jwt.refresh-days}")
+	private long refreshDays;
 	private final AuthService authService;
 
 	@Operation(summary = "회원가입 API", description = "새로운 사용자를 회원가입 시킵니다.")
@@ -83,7 +84,7 @@ public class AuthController {
 				.maxAge(0)
 				.httpOnly(true) // XSS 방지
 				.secure("prod".equals(activeProfile))
-				.sameSite("None") // CSRF 방지
+				.sameSite("prod".equals(activeProfile) ? "None" : "Lax") // 로컬: Lax, 운영: None
 				.path("/")
 				.build();
 
@@ -95,10 +96,10 @@ public class AuthController {
 	/** RefreshToken 쿠키 생성 */
 	private ResponseCookie createRefreshTokenCookie(String refreshToken) {
 		return ResponseCookie.from("refreshToken", refreshToken)
-				.maxAge(Duration.ofDays(14))
+				.maxAge(Duration.ofDays(refreshDays))
 				.httpOnly(true) // XSS 방지
-				.secure(true) // TODO : 운영환경에서는 true로 변경 필요 -> HTTPS 에서만 전송
-				.sameSite("None") // CSRF 방지
+				.secure("prod".equals(activeProfile))
+				.sameSite("prod".equals(activeProfile) ? "None" : "Lax") // 로컬: Lax, 운영: None
 				.path("/")
 				.build();
 	}
