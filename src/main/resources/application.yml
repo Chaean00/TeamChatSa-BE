@@ -42,11 +42,8 @@ spring:
     locations: classpath:db/migration
     schemas: public
 
-  # MongoDB / Redis
+  # Redis
   data:
-    mongodb:
-      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST:localhost}:${MONGO_PORT:27017}/?authSource=admin
-      database: ${MONGO_DB}
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
