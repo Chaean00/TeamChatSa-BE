@@ -56,6 +56,10 @@ public class OAuthService {
 			oauthRepo.save(link);
 		}
 
+		// 기존 사용자의 RefreshToken 무효화 (동시 로그인 방지)
+		redisTemplate.delete("refresh:token:" + redisTemplate.opsForValue().get("refresh:user:" + user.getId()));
+		redisTemplate.delete("refresh:user:" + user.getId());
+
 		// RefreshToken 생성 및 Redis 저장
 		String accessToken = jwtProvider.createAccessToken(user.getId());
 		String refreshToken = jwtProvider.createRefreshToken(user.getId());
@@ -71,7 +75,6 @@ public class OAuthService {
 				Duration.ofDays(14)
 		);
 
-		// Access Token만 반환 (OAuth Success Handler에서 Refresh Token은 별도 처리)
-		return new TokenRes(accessToken, refreshToken) ;
+		return new TokenRes(accessToken, refreshToken);
 	}
 }

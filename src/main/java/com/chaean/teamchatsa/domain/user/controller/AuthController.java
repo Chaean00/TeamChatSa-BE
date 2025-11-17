@@ -83,7 +83,7 @@ public class AuthController {
 				.maxAge(0)
 				.httpOnly(true) // XSS 방지
 				.secure("prod".equals(activeProfile))
-				.sameSite("None") // CSRF 방지
+				.sameSite("prod".equals(activeProfile) ? "None" : "Lax") // 로컬: Lax, 운영: None
 				.path("/")
 				.build();
 
@@ -97,8 +97,8 @@ public class AuthController {
 		return ResponseCookie.from("refreshToken", refreshToken)
 				.maxAge(Duration.ofDays(14))
 				.httpOnly(true) // XSS 방지
-				.secure(true) // TODO : 운영환경에서는 true로 변경 필요 -> HTTPS 에서만 전송
-				.sameSite("None") // CSRF 방지
+				.secure("prod".equals(activeProfile))
+				.sameSite("prod".equals(activeProfile) ? "None" : "Lax") // 로컬: Lax, 운영: None
 				.path("/")
 				.build();
 	}

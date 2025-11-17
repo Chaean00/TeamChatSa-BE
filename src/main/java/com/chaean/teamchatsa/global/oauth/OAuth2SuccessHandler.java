@@ -57,11 +57,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 			TokenRes tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
 			// refresh Token 쿠카 설정
 			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
+					.maxAge(Duration.ofDays(14))
 					.httpOnly(true)
 					.secure("prod".equals(activeProfile))       // 운영 HTTPS 필수
-					.sameSite("None")   // 다른 도메인으로 리다이렉트한다면 None 필요
+					.sameSite("Lax")   // 다른 도메인으로 리다이렉트한다면 None 필요
 					.path("/")
-					.maxAge(Duration.ofDays(14))
 					.build();
 
 			response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
