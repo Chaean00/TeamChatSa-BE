@@ -3,6 +3,7 @@ package com.chaean.teamchatsa.global.oauth;
 import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
 import com.chaean.teamchatsa.domain.user.service.OAuthService;
 import com.chaean.teamchatsa.global.exception.BusinessException;
+import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import java.util.Map;
 @Slf4j
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 	private final OAuthService oAuthService;
+	private final JwtProvider jwtProvider;
 
 	@Value("${app.auth.redirect-success}")
 	private String redirectSuccess;
@@ -55,12 +57,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 		try {
 			TokenRes tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
-			// refresh Token 쿠카 설정
+			// refresh Token 쿠키 설정
 			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
-					.maxAge(Duration.ofDays(14))
+					.maxAge(Duration.ofDays(jwtProvider.getRefreshDays()))
 					.httpOnly(true)
 					.secure("prod".equals(activeProfile))       // 운영 HTTPS 필수
-					.sameSite("Lax")   // 다른 도메인으로 리다이렉트한다면 None 필요
+					.sameSite("prod".equals(activeProfile) ? "None" : "Lax")
 					.path("/")
 					.build();
 

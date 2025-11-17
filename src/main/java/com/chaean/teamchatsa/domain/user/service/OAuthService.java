@@ -57,7 +57,10 @@ public class OAuthService {
 		}
 
 		// 기존 사용자의 RefreshToken 무효화 (동시 로그인 방지)
-		redisTemplate.delete("refresh:token:" + redisTemplate.opsForValue().get("refresh:user:" + user.getId()));
+		String oldRefreshToken = redisTemplate.opsForValue().get("refresh:user:" + user.getId());
+		if (oldRefreshToken != null) {
+			redisTemplate.delete("refresh:token:" + oldRefreshToken);
+		}
 		redisTemplate.delete("refresh:user:" + user.getId());
 
 		// RefreshToken 생성 및 Redis 저장
@@ -66,13 +69,13 @@ public class OAuthService {
 		redisTemplate.opsForValue().set(
 				"refresh:token:" + refreshToken,
 				user.getId().toString(),
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		redisTemplate.opsForValue().set(
 				"refresh:user:" + user.getId(),
 				refreshToken,
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		return new TokenRes(accessToken, refreshToken);

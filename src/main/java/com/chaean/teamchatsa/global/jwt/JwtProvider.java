@@ -57,4 +57,8 @@ public class JwtProvider {
 
         return Long.parseLong(body.getSubject());
     }
+
+    public long getRefreshDays() {
+        return refreshDays;
+    }
 }

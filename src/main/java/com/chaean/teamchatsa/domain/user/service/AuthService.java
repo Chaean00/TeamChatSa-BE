@@ -65,7 +65,10 @@ public class AuthService {
 		Long userId = user.get().getId();
 
 		// 기존 사용자의 RefreshToken 무효화 (동시 로그인 방지)
-		redisTemplate.delete("refresh:token:" + redisTemplate.opsForValue().get("refresh:user:" + userId));
+		String oldRefreshToken = redisTemplate.opsForValue().get("refresh:user:" + userId);
+		if (oldRefreshToken != null) {
+			redisTemplate.delete("refresh:token:" + oldRefreshToken);
+		}
 		redisTemplate.delete("refresh:user:" + userId);
 
 		// AT 및 RT 발급
@@ -76,14 +79,14 @@ public class AuthService {
 		redisTemplate.opsForValue().set(
 				"refresh:token:" + refreshToken,
 				userId.toString(),
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		// 사용자별 RT 매핑 저장
 		redisTemplate.opsForValue().set(
 				"refresh:user:" + userId,
 				refreshToken,
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		return new LoginRes(accessToken, refreshToken);
@@ -113,13 +116,13 @@ public class AuthService {
 		redisTemplate.opsForValue().set(
 				"refresh:token:" + newRefreshToken,
 				userId.toString(),
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		redisTemplate.opsForValue().set(
 				"refresh:user:" + userId,
 				newRefreshToken,
-				Duration.ofDays(14)
+				Duration.ofDays(jwtProvider.getRefreshDays())
 		);
 
 		return new TokenRes(newAccessToken, newRefreshToken);

@@ -8,6 +8,7 @@ import com.chaean.teamchatsa.domain.user.service.AuthService;
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,6 +33,7 @@ public class AuthController {
 	@Value("${spring.profiles.active:dev}")
 	private String activeProfile;
 	private final AuthService authService;
+	private final JwtProvider jwtProvider;
 
 	@Operation(summary = "회원가입 API", description = "새로운 사용자를 회원가입 시킵니다.")
 	@PostMapping("/signup")
@@ -95,7 +97,7 @@ public class AuthController {
 	/** RefreshToken 쿠키 생성 */
 	private ResponseCookie createRefreshTokenCookie(String refreshToken) {
 		return ResponseCookie.from("refreshToken", refreshToken)
-				.maxAge(Duration.ofDays(14))
+				.maxAge(Duration.ofDays(jwtProvider.getRefreshDays()))
 				.httpOnly(true) // XSS 방지
 				.secure("prod".equals(activeProfile))
 				.sameSite("prod".equals(activeProfile) ? "None" : "Lax") // 로컬: Lax, 운영: None
