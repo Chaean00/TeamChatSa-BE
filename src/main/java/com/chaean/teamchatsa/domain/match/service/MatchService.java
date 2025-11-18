@@ -78,7 +78,7 @@ public class MatchService {
 	public Slice<MatchPostListRes> findMatchPostList(int page, int size) {
 		// 추후에 동적 정렬 조건 설정 가능
 		Sort sort = Sort.by(
-				Sort.Order.asc("createdAt"),
+				Sort.Order.asc("matchDate"),
 				Sort.Order.desc("id")
 		);
 

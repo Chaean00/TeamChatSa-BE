@@ -52,8 +52,8 @@ dependencies {
     // kakao
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
-    // aws
-    implementation 'software.amazon.awssdk:s3:2.29.50'
+    // Azure Blob Storage
+    implementation 'com.azure:azure-storage-blob:12.32.0'
 
     // OpenFeign QueryDSL - JPA
     implementation "io.github.openfeign.querydsl:querydsl-jpa:7.0"

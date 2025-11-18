@@ -60,11 +60,10 @@ app:
     redirect-success: http://localhost:3000/auth/kakao/callback
     redirect-failure: http://localhost:3000/auth/kakao/failure
 
-aws:
-  s3:
-    access-key: ${AWS_ACCESS_KEY}
-    secret-key: ${AWS_SECRET_KEY}
-    bucket: ${AWS_S3_BUCKET_NAME}
-    region: ${AWS_REGION}
-    url-expire-seconds: 300
-    max-file-size-bytes: 10485760 # 10MBv
+azure:
+  storage:
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
+    blob-endpoint: https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net
+    sas-expire-seconds: ${AZURE_SAS_EXPIRE_SECONDS}
