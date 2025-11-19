@@ -5,6 +5,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -24,7 +26,11 @@ public class LoggingAspect {
         String[] parameterNames = signature.getParameterNames();
         Object[] args = joinPoint.getArgs();
 
-        log.info("[START] {}.{}()", className, methodName);
+        // 스레드 및 사용자 정보
+        String threadName = Thread.currentThread().getName();
+        String userInfo = getUserInfo();
+
+        log.info("[START] {}.{}() | Thread: {} | User: {}", className, methodName, threadName, userInfo);
 
         if (parameterNames.length > 0) {
             for (int i = 0; i < parameterNames.length; i++) {
@@ -39,12 +45,29 @@ public class LoggingAspect {
         try {
             result = joinPoint.proceed();
             stopWatch.stop();
-            log.info("[SUCCESS] {}.{}(). Execution Time: {} ms", className, methodName, stopWatch.getTotalTimeMillis());
+            log.info("[SUCCESS] {}.{}() | Thread: {} | User: {} | Execution Time: {} ms",
+                    className, methodName, threadName, userInfo, stopWatch.getTotalTimeMillis());
             return result;
         } catch (Throwable throwable) {
             stopWatch.stop();
-            log.error("[EXCEPTION] {}.{}(). Execution Time: {} ms", className, methodName, stopWatch.getTotalTimeMillis(), throwable);
+            log.error("[EXCEPTION] {}.{}() | Thread: {} | User: {} | Execution Time: {} ms",
+                    className, methodName, threadName, userInfo, stopWatch.getTotalTimeMillis(), throwable);
             throw throwable;
         }
+    }
+
+    /** SecurityContext에서 인증된 사용자 정보를 가져옵니다. 인증되지 않은 경우 "익명"을 반환.*/
+    private String getUserInfo() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof Long) {
+                Long userId = (Long) authentication.getPrincipal();
+                return "userId=" + userId;
+            }
+        } catch (Exception e) {
+            // SecurityContext를 사용할 수 없는 경우 (예: 비동기 스레드)
+            log.debug("SecurityContext에서 사용자 정보를 가져올 수 없습니다: {}", e.getMessage());
+        }
+        return "익명";
     }
 }

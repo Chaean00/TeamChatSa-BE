@@ -3,8 +3,10 @@ package com.chaean.teamchatsa.domain.match.service;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchLocationRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.domain.match.model.*;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
@@ -12,11 +14,13 @@ import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -39,6 +43,7 @@ public class MatchService {
 
 	/** 매치 게시물 등록 */
 	@Transactional
+	@Loggable
 	public void registerMatchPost(Long userId, MatchPostCreateReq req) {
 		if (req.getMatchDate().isBefore(LocalDateTime.now())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "매치 날짜는 현재 시각 이후여야 합니다.");
@@ -56,6 +61,7 @@ public class MatchService {
 
 	/** 매치 게시물 삭제 */
 	@Transactional
+	@Loggable
 	public void deleteMatchPost(Long userId, Long matchId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -75,6 +81,7 @@ public class MatchService {
 
 	/** 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
+	@Loggable
 	public Slice<MatchPostListRes> findMatchPostList(int page, int size) {
 		// 추후에 동적 정렬 조건 설정 가능
 		Sort sort = Sort.by(
@@ -84,11 +91,12 @@ public class MatchService {
 
 		Pageable pageable = PageRequest.of(page, size, sort);
 
-		return matchPostRepo.findMatchPostListWithPagination(pageable);
+		return matchPostRepo.findMatchPostsWithPagination(pageable);
 	}
 
 	/** 특정 팀의 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
+	@Loggable
 	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
 		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
@@ -96,11 +104,12 @@ public class MatchService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
 
-		return matchPostRepo.findMatchPostListByTeamId(teamId, pageable);
+		return matchPostRepo.findMatchPostsByTeamId(teamId, pageable);
 	}
 
 	/** 매치 게시물 상세 조회 */
 	@Transactional(readOnly = true)
+	@Loggable
 	public MatchPostDetailRes findMatchPostDetail(Long matchId) {
 		MatchPostDetailRes content = matchPostRepo.findMatchPostDetailById(matchId);
 		if (content == null) {
@@ -112,6 +121,7 @@ public class MatchService {
 
 	/** 매치 신청 */
 	@Transactional
+	@Loggable
 	public void registerMatchApplication(Long userId, Long matchId, MatchApplicationReq req) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -149,6 +159,7 @@ public class MatchService {
 
 	/** 매치 신청 취소 */
 	@Transactional
+	@Loggable
 	public void deleteMatchApplication(Long userId, Long matchId) {
 		if (!matchPostRepo.existsByIdAndIsDeletedFalse(matchId)) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
@@ -173,6 +184,7 @@ public class MatchService {
 	/** 매치 신청 수락 */
 	@DistributedLock(key = "'match:' + #matchId")
 	@Transactional
+	@Loggable
 	public String acceptMatchApplication(Long matchId, Long applicantId, Long userId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -218,6 +230,7 @@ public class MatchService {
 
 	/** 매치 신청 거절 */
 	@Transactional
+	@Loggable
 	public String rejectMatchApplication(Long matchId, Long applicantId, Long userId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -239,6 +252,7 @@ public class MatchService {
 	}
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public List<MatchApplicantRes> getMatchApplicants(Long userId, Long matchId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -249,5 +263,39 @@ public class MatchService {
 		}
 
 		return matchApplicationRepo.findApplicantsByMatchIdWithTeamInfo(matchId);
+	}
+
+	/** 위치 기반 매치 검색 */
+	@Transactional(readOnly = true)
+	@Loggable
+	public SliceResponse<MatchLocationRes> searchMatchesByLocation(Double lat, Double lng, Double radius, int page, int size) {
+		// 입력값 검증
+		if (lat < -90.0 || lat > 90.0) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "위도는 -90도에서 90도 사이여야 합니다.");
+		}
+		if (lng < -180.0 || lng > 180.0) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "경도는 -180도에서 180도 사이여야 합니다.");
+		}
+		if (radius <= 0) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "반경은 0보다 커야 합니다.");
+		}
+
+		Pageable pageable = PageRequest.of(page, size);
+		Page<MatchLocationRes> result = matchPostRepo.findMatchPostsByLocation(lat, lng, radius, LocalDateTime.now(), pageable)
+				.map(projection -> new MatchLocationRes(
+						projection.getId(),
+						projection.getTitle(),
+						projection.getPlaceName(),
+						projection.getMatchDate(),
+						projection.getTeamName(),
+						projection.getAddress(),
+						MatchPostStatus.valueOf(projection.getStatus()),
+						projection.getLevel(),
+						projection.getLat(),
+						projection.getLng(),
+						projection.getDistance()
+				));
+
+		return SliceResponse.from(result);
 	}
 }
