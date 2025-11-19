@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -85,6 +86,14 @@ public class GlobalExceptionHandler {
 
 		// 그 외 예외는 일반 무결성 위반으로 처리
 		return "데이터 무결성 제약 조건을 위반했습니다.";
+	}
+
+	@ExceptionHandler(RedisConnectionFailureException.class)
+	public ResponseEntity<ApiResponse<Void>> handleRedisConnectionFailureException(RedisConnectionFailureException ex) {
+		log.info("[RedisConnectionFailureException]: {}", ex.getMessage(), ex);
+		return ResponseEntity
+				.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(ApiResponse.fail("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
 	}
 
 	@ExceptionHandler(Exception.class)
