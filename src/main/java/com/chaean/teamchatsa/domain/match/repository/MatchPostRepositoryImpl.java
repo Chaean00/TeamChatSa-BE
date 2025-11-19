@@ -27,7 +27,7 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Slice<MatchPostListRes> findMatchPostListWithPagination(Pageable pageable) {
+	public Slice<MatchPostListRes> findMatchPostsWithPagination(Pageable pageable) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
 
@@ -60,7 +60,7 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	}
 
 	@Override
-	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, Pageable pageable) {
+	public Slice<MatchPostListRes> findMatchPostsByTeamId(Long teamId, Pageable pageable) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
 

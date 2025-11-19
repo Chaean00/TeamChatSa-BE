@@ -45,6 +45,9 @@ public class MatchPost extends DeleteAndTimeEntity {
     @Column(name = "lng", nullable = false)
     private Double lng;
 
+    @Column(name = "location", columnDefinition = "geography(Point,4326)", insertable = false, updatable = false)
+    private String location; // DB에서 자동 생성되는 컬럼
+
     @NotNull
     @Column(name = "address", nullable = false, length = 255)
     private String address;

@@ -56,7 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 res.setCharacterEncoding("UTF-8");
 
                 ObjectMapper mapper = new ObjectMapper();
-                ApiResponse<Void> apiResponse = ApiResponse.fail("JWT 오류가 발생했습니다.");
+                ApiResponse<Void> apiResponse = ApiResponse.fail("유효하지 않은 토큰입니다.");
                 res.getWriter().write(mapper.writeValueAsString(apiResponse));
                 return; // 필터 체인 중단
             } catch (Exception e) {
