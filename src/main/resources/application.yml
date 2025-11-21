@@ -48,6 +48,13 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+  # Spring Cloud GCP
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      credentials:
+        encoded-key: ${GCP_STORAGE_CREDENTIALS:}
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -60,10 +67,7 @@ app:
     redirect-success: http://localhost:3000/auth/kakao/callback
     redirect-failure: http://localhost:3000/auth/kakao/failure
 
-azure:
+gcp:
   storage:
-    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
-    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
-    container-name: ${AZURE_STORAGE_CONTAINER_NAME}
-    blob-endpoint: https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net
-    sas-expire-seconds: ${AZURE_SAS_EXPIRE_SECONDS}
+    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
+    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}

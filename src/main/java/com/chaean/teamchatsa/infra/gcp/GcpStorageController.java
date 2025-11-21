@@ -1,4 +1,4 @@
-package com.chaean.teamchatsa.infra.Azure;
+package com.chaean.teamchatsa.infra.gcp;
 
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,19 +11,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Azure Blob Storage API", description = "Azure Blob Storage 파일 업로드 API")
+@Tag(name = "GCP Cloud Storage API", description = "GCP Cloud Storage 파일 업로드 API")
 @RestController
-@RequestMapping("/api/v1/azure/storage")
+@RequestMapping("/api/v1/gcp/storage")
 @RequiredArgsConstructor
-public class AzureStorageController {
+public class GcpStorageController {
 
-	private final AzureStorageService storageService;
+	private final GcpStorageService storageService;
 
-	@Operation(summary = "업로드용 SAS URL 발급", description = "파일 업로드를 위한 SAS URL과 공개 다운로드 URL을 반환합니다.")
+	@Operation(summary = "업로드용 Signed URL 발급", description = "파일 업로드를 위한 GCP Signed URL을 반환합니다.")
 	@PostMapping("/presign-upload")
 	public ResponseEntity<ApiResponse<PresignUploadRes>> presignUpload(
-			@RequestBody PresignUploadReq req,
-			@AuthenticationPrincipal Long userId
+		@RequestBody PresignUploadReq req,
+		@AuthenticationPrincipal Long userId
 	) {
 		PresignUploadRes res = storageService.presignUpload(req, userId);
 		return ResponseEntity.ok(ApiResponse.success(res));
