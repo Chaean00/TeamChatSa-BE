@@ -17,6 +17,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long>, T
 
     Optional<TeamMember> findByUserIdAndIsDeletedFalse(Long userId);
 
+    List<TeamMember> findByTeamIdAndIsDeletedFalse(Long teamId);
+
     @Query("""
         SELECT tm.teamId
           FROM TeamMember tm
