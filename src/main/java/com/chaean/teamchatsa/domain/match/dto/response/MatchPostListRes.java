@@ -22,6 +22,7 @@ public class MatchPostListRes {
 	private String matchAddress;
 	private MatchPostStatus postStatus;
 	private String teamLevel;
+	private int headCount;
 
 	public MatchPostListRes(Long postId,
 							String title,
@@ -30,7 +31,8 @@ public class MatchPostListRes {
 							String teamName,
 							String address,
 							MatchPostStatus postStatus,
-							String level) {
+							String level,
+							int headCount) {
 		this.postId = postId;
 		this.matchTitle = title;
 		this.placeName = placeName;
@@ -40,5 +42,6 @@ public class MatchPostListRes {
 		this.matchAddress = address;
 		this.postStatus = postStatus;
 		this.teamLevel = level;
+		this.headCount = headCount;
 	}
 }

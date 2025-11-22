@@ -2,6 +2,7 @@ package com.chaean.teamchatsa.domain.match.service;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchLocationRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
@@ -82,16 +83,16 @@ public class MatchService {
 	/** 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public Slice<MatchPostListRes> findMatchPostList(int page, int size) {
+	public Slice<MatchPostListRes> findMatchPostList(MatchPostSearchReq req) {
 		// 추후에 동적 정렬 조건 설정 가능
 		Sort sort = Sort.by(
 				Sort.Order.asc("matchDate"),
 				Sort.Order.desc("id")
 		);
 
-		Pageable pageable = PageRequest.of(page, size, sort);
+		Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), sort);
 
-		return matchPostRepo.findMatchPostsWithPagination(pageable);
+		return matchPostRepo.findMatchPostsWithPagination(req, pageable);
 	}
 
 	/** 특정 팀의 매치 게시물 목록 조회 */

@@ -1,25 +1,30 @@
 package com.chaean.teamchatsa.domain.match.repository;
 
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
 import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
 import com.chaean.teamchatsa.domain.match.model.QMatchPost;
 import com.chaean.teamchatsa.domain.team.model.QTeam;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /** MatchPost QueryDSL 구현체 */
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
@@ -27,9 +32,12 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Slice<MatchPostListRes> findMatchPostsWithPagination(Pageable pageable) {
+	public Slice<MatchPostListRes> findMatchPostsWithPagination(MatchPostSearchReq searchReq, Pageable pageable) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
+
+		// 동적 필터 조건 생성
+		BooleanBuilder filterCondition = buildFilterCondition(searchReq, mp);
 
 		List<MatchPostListRes> content = queryFactory
 				.select(Projections.constructor(
@@ -41,14 +49,16 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						t.name,
 						mp.address,
 						mp.status,
-						t.level
+						t.level,
+						mp.headCount
 				))
 				.from(mp)
 				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
 				.where(
-						mp.isDeleted.eq(false)
-								.and(mp.status.eq(MatchPostStatus.OPEN))
-								.and(mp.matchDate.goe(LocalDateTime.now()))
+						mp.isDeleted.isFalse(),
+						mp.status.eq(MatchPostStatus.OPEN),
+						mp.matchDate.goe(LocalDateTime.now()),
+						filterCondition
 				)
 				.orderBy(getSortOrder(pageable, mp))
 				.offset(pageable.getOffset())
@@ -57,6 +67,34 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 
 		// Slice 생성 (무한 스크롤)
 		return createSlice(content, pageable);
+	}
+
+	/** 검색 조건 필터 빌드 */
+	private BooleanBuilder buildFilterCondition(MatchPostSearchReq searchReq, QMatchPost mp) {
+		BooleanBuilder builder = new BooleanBuilder();
+
+		log.info("searchReq: {}", searchReq);
+		// 시작일 필터
+		if (searchReq.getStartDate() != null) {
+			builder.and(mp.matchDate.goe(searchReq.getStartDate().atStartOfDay()));
+		}
+
+		// 종료일 필터
+		if (searchReq.getEndDate() != null) {
+			builder.and(mp.matchDate.lt(searchReq.getEndDate().plusDays(1).atStartOfDay()));
+		}
+
+		// 인원수 필터
+		if (searchReq.getHeadCount() != null) {
+			builder.and(mp.headCount.eq(searchReq.getHeadCount()));
+		}
+
+		// 지역 필터
+		if (StringUtils.hasText(searchReq.getRegion())) {
+			builder.and(mp.address.like(searchReq.getRegion() + "%"));
+		}
+
+		return builder;
 	}
 
 	@Override
@@ -74,7 +112,8 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						t.name,
 						mp.address,
 						mp.status,
-						t.level
+						t.level,
+						mp.headCount
 				))
 				.from(mp)
 				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))

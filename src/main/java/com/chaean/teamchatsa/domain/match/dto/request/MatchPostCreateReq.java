@@ -18,6 +18,9 @@ public class MatchPostCreateReq {
 	@NotNull
 	private String content;
 	@NotNull
+	@Min(4) @Max(11)
+	private int headCount;
+	@NotNull
 	@Future
 	private LocalDateTime matchDate;
 	@NotNull
@@ -39,6 +42,7 @@ public class MatchPostCreateReq {
 				.teamId(teamId)
 				.title(this.title)
 				.content(this.content)
+				.headCount(this.headCount)
 				.address(this.address)
 				.matchDate(this.matchDate)
 				.lat(this.lat)

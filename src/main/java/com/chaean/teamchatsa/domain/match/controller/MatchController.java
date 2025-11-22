@@ -2,6 +2,7 @@ package com.chaean.teamchatsa.domain.match.controller;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchLocationRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "매치 API", description = "매치 글 관련 API")
@@ -56,11 +58,8 @@ public class MatchController {
 
 	@Operation(summary = "매치 게시물 목록 조회 API", description = "매치 게시물 목록을 조회합니다.(무한스크롤)")
 	@GetMapping("")
-	public ResponseEntity<ApiResponse<Slice<MatchPostListRes>>> getMatchList(
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size
-	) {
-		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", matchService.findMatchPostList(page, size)));
+	public ResponseEntity<ApiResponse<Slice<MatchPostListRes>>> getMatchList(@ModelAttribute MatchPostSearchReq req) {
+		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", matchService.findMatchPostList(req)));
 	}
 
 	@Operation(summary = "위치 기반 매치 검색 API", description = "사용자의 위치를 기준으로 주변의 매치 게시물을 검색합니다. (무한 스크롤)")
