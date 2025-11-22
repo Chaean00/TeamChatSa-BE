@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,10 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 		QTeam t = QTeam.team;
 
 		// 동적 필터 조건 생성
-		BooleanBuilder filterCondition = buildFilterCondition(searchReq, mp);
+		BooleanBuilder filterCondition = buildFilterCondition(
+				searchReq.getStartDate(), searchReq.getEndDate(),
+				searchReq.getHeadCount(), searchReq.getRegion(), mp
+		);
 
 		List<MatchPostListRes> content = queryFactory
 				.select(Projections.constructor(
@@ -70,28 +74,20 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	}
 
 	/** 검색 조건 필터 빌드 */
-	private BooleanBuilder buildFilterCondition(MatchPostSearchReq searchReq, QMatchPost mp) {
+	private BooleanBuilder buildFilterCondition(LocalDate startDate, LocalDate endDate, Integer headCount, String region, QMatchPost mp) {
 		BooleanBuilder builder = new BooleanBuilder();
 
-		log.info("searchReq: {}", searchReq);
-		// 시작일 필터
-		if (searchReq.getStartDate() != null) {
-			builder.and(mp.matchDate.goe(searchReq.getStartDate().atStartOfDay()));
+		if (startDate != null) {
+			builder.and(mp.matchDate.goe(startDate.atStartOfDay()));
 		}
-
-		// 종료일 필터
-		if (searchReq.getEndDate() != null) {
-			builder.and(mp.matchDate.lt(searchReq.getEndDate().plusDays(1).atStartOfDay()));
+		if (endDate != null) {
+			builder.and(mp.matchDate.lt(endDate.plusDays(1).atStartOfDay()));
 		}
-
-		// 인원수 필터
-		if (searchReq.getHeadCount() != null) {
-			builder.and(mp.headCount.eq(searchReq.getHeadCount()));
+		if (headCount != null) {
+			builder.and(mp.headCount.eq(headCount));
 		}
-
-		// 지역 필터
-		if (StringUtils.hasText(searchReq.getRegion())) {
-			builder.and(mp.address.like(searchReq.getRegion() + "%"));
+		if (StringUtils.hasText(region)) {
+			builder.and(mp.address.like(region + "%"));
 		}
 
 		return builder;
@@ -214,4 +210,5 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 				return null;
 		}
 	}
+
 }

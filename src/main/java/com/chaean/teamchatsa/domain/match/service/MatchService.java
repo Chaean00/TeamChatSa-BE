@@ -1,16 +1,17 @@
 package com.chaean.teamchatsa.domain.match.service;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchLocationRes;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchMapRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
-import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.domain.match.model.*;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
+import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
@@ -21,7 +22,6 @@ import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -266,37 +267,37 @@ public class MatchService {
 		return matchApplicationRepo.findApplicantsByMatchIdWithTeamInfo(matchId);
 	}
 
-	/** 위치 기반 매치 검색 */
+	/** 위치 기반 매치 검색 (BoundingBox + PostGIS) */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<MatchLocationRes> searchMatchesByLocation(Double lat, Double lng, Double radius, int page, int size) {
-		// 입력값 검증
-		if (lat < -90.0 || lat > 90.0) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "위도는 -90도에서 90도 사이여야 합니다.");
+	public List<MatchMapRes> searchMatchesByLocation(MatchMapSearchReq req) {
+		// BoundingBox 순서 검증 (sw < ne)
+		if (req.getSwLat() > req.getNeLat()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 위도는 북동쪽 위도보다 작아야 합니다.");
 		}
-		if (lng < -180.0 || lng > 180.0) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "경도는 -180도에서 180도 사이여야 합니다.");
-		}
-		if (radius <= 0) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "반경은 0보다 커야 합니다.");
+		if (req.getSwLng() > req.getNeLng()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 경도는 북동쪽 경도보다 작아야 합니다.");
 		}
 
-		Pageable pageable = PageRequest.of(page, size);
-		Page<MatchLocationRes> result = matchPostRepo.findMatchPostsByLocation(lat, lng, radius, LocalDateTime.now(), pageable)
-				.map(projection -> new MatchLocationRes(
+		List<MatchLocationProjection> result = matchPostRepo.findMatchPostsByLocation(
+				req.getSwLat(), req.getSwLng(),
+				req.getNeLat(), req.getNeLng(),
+				LocalDateTime.now(),
+				req.getStartDate(), req.getEndDate(),
+				req.getHeadCount(), req.getRegion()
+		);
+
+		return result.stream()
+				.map(projection ->
+						new MatchMapRes(
 						projection.getId(),
 						projection.getTitle(),
-						projection.getPlaceName(),
 						projection.getMatchDate(),
 						projection.getTeamName(),
-						projection.getAddress(),
-						MatchPostStatus.valueOf(projection.getStatus()),
 						projection.getLevel(),
 						projection.getLat(),
-						projection.getLng(),
-						projection.getDistance()
-				));
-
-		return SliceResponse.from(result);
+						projection.getLng()
+				))
+				.collect(Collectors.toList());
 	}
 }

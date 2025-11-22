@@ -14,5 +14,6 @@ public interface MatchPostRepositoryCustom {
 	/** 특정 팀의 MatchPost 목록 조회 (페이지네이션) */
 	Slice<MatchPostListRes> findMatchPostsByTeamId(Long teamId, Pageable pageable);
 
+	/** MatchPost 상세 조회 */
 	MatchPostDetailRes findMatchPostDetailById(Long matchId);
 }

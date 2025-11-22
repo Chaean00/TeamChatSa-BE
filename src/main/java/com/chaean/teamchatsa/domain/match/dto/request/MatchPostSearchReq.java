@@ -1,5 +1,7 @@
 package com.chaean.teamchatsa.domain.match.dto.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,6 +21,7 @@ public class MatchPostSearchReq {
 	private LocalDate startDate;
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 	private LocalDate endDate;
+	@Min(4) @Max(11)
 	private Integer headCount;
 	private String region;
 }
