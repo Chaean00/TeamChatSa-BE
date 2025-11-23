@@ -73,3 +73,17 @@ gcp:
   storage:
     bucket-name: ${GCP_STORAGE_BUCKET_NAME}
     signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+
+# Actuator & Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  endpoint:
+    health:
+      show-details: never
+  prometheus:
+    metrics:
+      export:
+        enabled: true
