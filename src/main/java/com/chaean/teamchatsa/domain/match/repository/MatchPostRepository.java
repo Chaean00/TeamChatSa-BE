@@ -2,13 +2,13 @@ package com.chaean.teamchatsa.domain.match.repository;
 
 import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, MatchPostRepositoryCustom {
@@ -16,64 +16,48 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 	boolean existsByIdAndIsDeletedFalse(Long matchId);
 
 	/**
-	 * 위치 기반 매치 검색 (Native Query)
-	 * PostGIS ST_DWithin으로 반경 내 필터링, KNN 연산자로 거리ㅇㅇㄴㅁㄹㄹㄴㅁㅇㅁㅁ순 정렬
+	 * BoundingBox 기반 매치 검색 (Native Query)
+	 * PostGIS ST_MakeEnvelope로 지도 영역 내 필터링
 	 */
 	@Query(value = """
-		/* language=SQL */
 		SELECT
 			mp.id AS id,
 			mp.title AS title,
-			mp.place_name AS placeName,
 			mp.match_date AS matchDate,
 			t.name AS teamName,
-			mp.address AS address,
-			mp.status AS status,
 			t.level AS level,
-		    mp.lat AS lat,
-		    mp.lng AS lng,
-		    ST_Distance(
-			    mp.location::geography,
-			    ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-		    ) AS distance
-		FROM
+			mp.lat AS lat,
+			mp.lng AS lng
+		FROM 
 			match_post mp
-		LEFT JOIN
-			team t
-			ON t.id = mp.team_id AND t.is_deleted = false
-		WHERE
+		LEFT JOIN 
+			team t 
+		    ON t.id = mp.team_id 
+			   AND t.is_deleted = false
+		WHERE 
 			mp.is_deleted = false
-		  	AND mp.status = 'OPEN'
-		  	AND mp.match_date >= :currentDateTime
-		  	AND ST_DWithin(
-					mp.location::geography,
-					ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-					:radius
-				)
-		ORDER BY
-			mp.location <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-		""",
-
-		countQuery = """
-		/* language=SQL */
-		SELECT COUNT(*)
-		FROM match_post mp
-		WHERE
-			mp.is_deleted = false
-		  	AND mp.status = 'OPEN'
-		  	AND mp.match_date >= :currentDateTime
-		  	AND ST_DWithin(
-					mp.location::geography,
-					ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-					:radius
-				)
-		""",
-	nativeQuery = true)
-	Page<MatchLocationProjection> findMatchPostsByLocation(
-			@Param("lat") Double lat,
-			@Param("lng") Double lng,
-			@Param("radius") Double radiusInMeters,
+			AND mp.status = 'OPEN'
+			AND mp.match_date >= :currentDateTime
+			AND ST_Within(
+				mp.location::geometry,
+				ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)::geometry
+			)
+			AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
+			AND (CAST(:endDate AS date) IS NULL OR mp.match_date < CAST(:endDate AS timestamp) + INTERVAL '1 day')
+			AND (:headCount IS NULL OR mp.head_count = :headCount)
+			AND (:region IS NULL OR mp.address LIKE CONCAT(:region, '%'))
+		ORDER BY 
+			mp.match_date ASC, mp.id DESC
+		""", nativeQuery = true)
+	List<MatchLocationProjection> findMatchPostsByLocation(
+			@Param("swLat") Double swLat,
+			@Param("swLng") Double swLng,
+			@Param("neLat") Double neLat,
+			@Param("neLng") Double neLng,
 			@Param("currentDateTime") LocalDateTime currentDateTime,
-			Pageable pageable
+			@Param("startDate") LocalDate startDate,
+			@Param("endDate") LocalDate endDate,
+			@Param("headCount") Integer headCount,
+			@Param("region") String region
 	);
 }

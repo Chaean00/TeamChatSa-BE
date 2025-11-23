@@ -34,6 +34,10 @@ public class MatchPost extends DeleteAndTimeEntity {
     private String content;
 
     @NotNull
+    @Column(name = "head_count", nullable = false)
+    private int headCount;
+
+    @NotNull
     @Column(name = "match_date", nullable = false)
     private LocalDateTime matchDate;
 
