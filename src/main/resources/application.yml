@@ -8,6 +8,7 @@ spring:
     password: ${POSTGRES_PASSWORD}
 
   jpa:
+
     open-in-view: false
     hibernate:
       ddl-auto: validate
@@ -47,6 +48,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
   # Spring Cloud GCP
   cloud:
