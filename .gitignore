@@ -36,7 +36,10 @@ out/
 ### VS Code ###
 .vscode/
 
+.DS_Store
 .env.**
 GEMINI.md
 CLAUDE.md
 docs/
+
+logs/

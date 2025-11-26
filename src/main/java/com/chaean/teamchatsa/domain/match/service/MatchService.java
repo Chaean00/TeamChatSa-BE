@@ -1,17 +1,22 @@
 package com.chaean.teamchatsa.domain.match.service;
 
 import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchMapRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
 import com.chaean.teamchatsa.domain.match.model.*;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
+import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +45,7 @@ public class MatchService {
 
 	/** 매치 게시물 등록 */
 	@Transactional
+	@Loggable
 	public void registerMatchPost(Long userId, MatchPostCreateReq req) {
 		if (req.getMatchDate().isBefore(LocalDateTime.now())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "매치 날짜는 현재 시각 이후여야 합니다.");
@@ -56,6 +63,7 @@ public class MatchService {
 
 	/** 매치 게시물 삭제 */
 	@Transactional
+	@Loggable
 	public void deleteMatchPost(Long userId, Long matchId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -75,14 +83,22 @@ public class MatchService {
 
 	/** 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
-	public Slice<MatchPostListRes> findMatchPostList(int page, int size) {
-		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
+	@Loggable
+	public Slice<MatchPostListRes> findMatchPostList(MatchPostSearchReq req) {
+		// 추후에 동적 정렬 조건 설정 가능
+		Sort sort = Sort.by(
+				Sort.Order.asc("matchDate"),
+				Sort.Order.desc("id")
+		);
 
-		return matchPostRepo.findMatchPostListWithPagination(pageable);
+		Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), sort);
+
+		return matchPostRepo.findMatchPostsWithPagination(req, pageable);
 	}
 
 	/** 특정 팀의 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
+	@Loggable
 	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
 		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
@@ -90,11 +106,12 @@ public class MatchService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
 
-		return matchPostRepo.findMatchPostListByTeamId(teamId, pageable);
+		return matchPostRepo.findMatchPostsByTeamId(teamId, pageable);
 	}
 
 	/** 매치 게시물 상세 조회 */
 	@Transactional(readOnly = true)
+	@Loggable
 	public MatchPostDetailRes findMatchPostDetail(Long matchId) {
 		MatchPostDetailRes content = matchPostRepo.findMatchPostDetailById(matchId);
 		if (content == null) {
@@ -106,6 +123,7 @@ public class MatchService {
 
 	/** 매치 신청 */
 	@Transactional
+	@Loggable
 	public void registerMatchApplication(Long userId, Long matchId, MatchApplicationReq req) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -143,6 +161,7 @@ public class MatchService {
 
 	/** 매치 신청 취소 */
 	@Transactional
+	@Loggable
 	public void deleteMatchApplication(Long userId, Long matchId) {
 		if (!matchPostRepo.existsByIdAndIsDeletedFalse(matchId)) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
@@ -167,6 +186,7 @@ public class MatchService {
 	/** 매치 신청 수락 */
 	@DistributedLock(key = "'match:' + #matchId")
 	@Transactional
+	@Loggable
 	public String acceptMatchApplication(Long matchId, Long applicantId, Long userId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -212,6 +232,7 @@ public class MatchService {
 
 	/** 매치 신청 거절 */
 	@Transactional
+	@Loggable
 	public String rejectMatchApplication(Long matchId, Long applicantId, Long userId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -233,6 +254,7 @@ public class MatchService {
 	}
 
 	@Transactional(readOnly = true)
+	@Loggable
 	public List<MatchApplicantRes> getMatchApplicants(Long userId, Long matchId) {
 		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
@@ -243,5 +265,39 @@ public class MatchService {
 		}
 
 		return matchApplicationRepo.findApplicantsByMatchIdWithTeamInfo(matchId);
+	}
+
+	/** 위치 기반 매치 검색 (BoundingBox + PostGIS) */
+	@Transactional(readOnly = true)
+	@Loggable
+	public List<MatchMapRes> searchMatchesByLocation(MatchMapSearchReq req) {
+		// BoundingBox 순서 검증 (sw < ne)
+		if (req.getSwLat() > req.getNeLat()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 위도는 북동쪽 위도보다 작아야 합니다.");
+		}
+		if (req.getSwLng() > req.getNeLng()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 경도는 북동쪽 경도보다 작아야 합니다.");
+		}
+
+		List<MatchLocationProjection> result = matchPostRepo.findMatchPostsByLocation(
+				req.getSwLat(), req.getSwLng(),
+				req.getNeLat(), req.getNeLng(),
+				LocalDateTime.now(),
+				req.getStartDate(), req.getEndDate(),
+				req.getHeadCount(), req.getRegion()
+		);
+
+		return result.stream()
+				.map(projection ->
+						new MatchMapRes(
+						projection.getId(),
+						projection.getTitle(),
+						projection.getMatchDate(),
+						projection.getTeamName(),
+						projection.getLevel(),
+						projection.getLat(),
+						projection.getLng()
+				))
+				.collect(Collectors.toList());
 	}
 }

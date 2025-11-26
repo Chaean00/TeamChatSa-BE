@@ -21,6 +21,8 @@ public class JwtProvider {
     private String secret;
     @Value("${app.jwt.access-minutes}")
     private long accessMinutes;
+    @Value("${app.jwt.refresh-days}")
+    private long refreshDays;
 
     public String createAccessToken(Long userId) {
         Instant now = Instant.now();
@@ -39,14 +41,10 @@ public class JwtProvider {
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(now.plus(14, ChronoUnit.DAYS)))
+                .setExpiration(Date.from(now.plus(refreshDays, ChronoUnit.DAYS)))
                 .claim("type", "refresh")
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    public LocalDateTime getRefreshTokenExpiry() {
-        return LocalDateTime.now().plusDays(14);
     }
 
     public Long parseUserId(String token) {
@@ -57,33 +55,5 @@ public class JwtProvider {
                 .getBody();
 
         return Long.parseLong(body.getSubject());
-    }
-
-    public boolean isTokenExpired(String token) {
-        try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            return claims.getExpiration().before(new java.util.Date());
-        } catch (Exception e) {
-            return true; // 파싱 불가능한 토큰은 만료된 것으로 처리
-        }
-    }
-
-    public boolean isRefreshToken(String token) {
-        try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            return "refresh".equals(claims.get("type"));
-        } catch (Exception e) {
-            return false;
-        }
     }
 }

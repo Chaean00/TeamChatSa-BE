@@ -1,4 +1,4 @@
-package com.chaean.teamchatsa.infra.aws;
+package com.chaean.teamchatsa.infra.gcp;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

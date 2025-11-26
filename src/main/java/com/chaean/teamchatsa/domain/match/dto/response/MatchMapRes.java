@@ -12,36 +12,37 @@ import java.time.LocalTime;
 @Getter
 @AllArgsConstructor
 @Builder
-public class MatchPostListRes {
+public class MatchMapRes {
+
 	private Long postId;
 	private String matchTitle;
-	private String placeName;
+//	private String placeName;
 	private LocalDate matchDate;
 	private LocalTime matchTime;
 	private String teamName;
-	private String matchAddress;
-	private MatchPostStatus postStatus;
 	private String teamLevel;
-	private int headCount;
+//	private String matchAddress;
+//	private MatchPostStatus postStatus;
+	private Double lat;
+	private Double lng;
 
-	public MatchPostListRes(Long postId,
-							String title,
-							String placeName,
-							LocalDateTime matchDateTime,
-							String teamName,
-							String address,
-							MatchPostStatus postStatus,
-							String level,
-							int headCount) {
+	public MatchMapRes(Long postId,
+					   String title,
+					   LocalDateTime matchDateTime,
+					   String teamName,
+					   String teamLevel,
+					   Double lat,
+					   Double lng) {
 		this.postId = postId;
 		this.matchTitle = title;
-		this.placeName = placeName;
+//		this.placeName = placeName;
 		this.matchDate = matchDateTime.toLocalDate();
 		this.matchTime = matchDateTime.toLocalTime();
 		this.teamName = teamName;
-		this.matchAddress = address;
-		this.postStatus = postStatus;
-		this.teamLevel = level;
-		this.headCount = headCount;
+//		this.matchAddress = address;
+//		this.postStatus = postStatus;
+		this.teamLevel = teamLevel;
+		this.lat = lat;
+		this.lng = lng;
 	}
 }

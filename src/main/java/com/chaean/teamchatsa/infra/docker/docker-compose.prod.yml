@@ -1,0 +1,9 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
+    container_name: teamchatsa-app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -120,14 +120,17 @@ public class TeamService {
 		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
-		Long memberCount = teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId);
+		List<TeamMember> members = teamMemberRepo.findByTeamIdAndIsDeletedFalse(teamId);
 
 		// 본인 제외
-		if (memberCount > 1) {
+		if (members.size() > 1) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "팀원 존재로 인해 팀을 삭제할 수 없습니다.");
 		}
 
 		team.softDelete();
+		for (TeamMember member : members) {
+			member.softDelete();
+		}
 	}
 
 	@Transactional(readOnly = true)

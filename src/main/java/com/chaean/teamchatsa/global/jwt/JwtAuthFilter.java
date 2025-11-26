@@ -50,17 +50,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         = new UsernamePasswordAuthenticationToken(user.get().getId(), null, List.of(new SimpleGrantedAuthority(user.get().getRole().name())));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException e) {
-                log.debug("유효하지 않은 토큰입니다. {}", e.getMessage(), e);
+                log.error("유효하지 않은 토큰입니다. {}", e.getMessage(), e);
                 res.setStatus(HttpStatus.UNAUTHORIZED.value());
                 res.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 res.setCharacterEncoding("UTF-8");
 
                 ObjectMapper mapper = new ObjectMapper();
-                ApiResponse<Void> apiResponse = ApiResponse.fail("JWT 오류가 발생했습니다.");
+                ApiResponse<Void> apiResponse = ApiResponse.fail("유효하지 않은 토큰입니다.");
                 res.getWriter().write(mapper.writeValueAsString(apiResponse));
                 return; // 필터 체인 중단
             } catch (Exception e) {
-                log.error("JWT 인증 처리 중 오류: {}", e.getMessage(), e);
+                log.error("인증 처리 중 오류: {}", e.getMessage(), e);
 
                 res.setStatus(HttpStatus.UNAUTHORIZED.value());
                 res.setContentType(MediaType.APPLICATION_JSON_VALUE);

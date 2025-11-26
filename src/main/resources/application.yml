@@ -8,6 +8,7 @@ spring:
     password: ${POSTGRES_PASSWORD}
 
   jpa:
+
     open-in-view: false
     hibernate:
       ddl-auto: validate
@@ -42,14 +43,19 @@ spring:
     locations: classpath:db/migration
     schemas: public
 
-  # MongoDB / Redis
+  # Redis
   data:
-    mongodb:
-      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST:localhost}:${MONGO_PORT:27017}/?authSource=admin
-      database: ${MONGO_DB}
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  # Spring Cloud GCP
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      credentials:
+        encoded-key: ${GCP_STORAGE_CREDENTIALS:}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -63,11 +69,21 @@ app:
     redirect-success: http://localhost:3000/auth/kakao/callback
     redirect-failure: http://localhost:3000/auth/kakao/failure
 
-aws:
-  s3:
-    access-key: ${AWS_ACCESS_KEY}
-    secret-key: ${AWS_SECRET_KEY}
-    bucket: ${AWS_S3_BUCKET_NAME}
-    region: ${AWS_REGION}
-    url-expire-seconds: 300
-    max-file-size-bytes: 10485760 # 10MBv
+gcp:
+  storage:
+    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
+    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+
+# Actuator & Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  endpoint:
+    health:
+      show-details: never
+  prometheus:
+    metrics:
+      export:
+        enabled: true
