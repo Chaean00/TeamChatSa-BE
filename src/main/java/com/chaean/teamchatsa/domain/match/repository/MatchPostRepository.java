@@ -16,8 +16,8 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 	boolean existsByIdAndIsDeletedFalse(Long matchId);
 
 	/**
-	 * BoundingBox 기반 매치 검색 (Native Query)
-	 * PostGIS ST_MakeEnvelope로 지도 영역 내 필터링
+	 * 지도 기반 매치 검색
+	 * PostGIS 공간 인덱스 최적화: && 연산자 + ST_Intersects
 	 */
 	@Query(value = """
 		SELECT
@@ -28,25 +28,23 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 			t.level AS level,
 			mp.lat AS lat,
 			mp.lng AS lng
-		FROM 
+		FROM
 			match_post mp
-		LEFT JOIN 
-			team t 
-		    ON t.id = mp.team_id 
+		LEFT JOIN
+			team t
+		    ON t.id = mp.team_id
 			   AND t.is_deleted = false
-		WHERE 
+		WHERE
 			mp.is_deleted = false
 			AND mp.status = 'OPEN'
+			AND mp.location && ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
+			AND ST_Intersects(mp.location, ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326))
 			AND mp.match_date >= :currentDateTime
-			AND ST_Within(
-				mp.location::geometry,
-				ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)::geometry
-			)
 			AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
 			AND (CAST(:endDate AS date) IS NULL OR mp.match_date < CAST(:endDate AS timestamp) + INTERVAL '1 day')
 			AND (:headCount IS NULL OR mp.head_count = :headCount)
 			AND (:region IS NULL OR mp.address LIKE CONCAT(:region, '%'))
-		ORDER BY 
+		ORDER BY
 			mp.match_date ASC, mp.id DESC
 		""", nativeQuery = true)
 	List<MatchLocationProjection> findMatchPostsByLocation(
