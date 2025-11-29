@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SlackMessage {
 
-	private String text;  // 메시지 미리보기
+	private String text;
 	private List<Attachment> attachments;
 
 	@Getter
@@ -24,13 +24,13 @@ public class SlackMessage {
 	@NoArgsConstructor
 	@AllArgsConstructor
 	public static class Attachment {
-		private String color;  // good(green), warning(yellow), danger(red), #hex
+		private String color;
 		private String pretext;
 		private String title;
 		private String text;
 		private List<Field> fields;
 		private String footer;
-		private Long ts;  // Unix timestamp
+		private Long ts;
 	}
 
 	@Getter
@@ -41,7 +41,7 @@ public class SlackMessage {
 		private String title;
 		private String value;
 		@Builder.Default
-		private Boolean shortField = false;  // 필드를 짧게 표시할지 여부
+		private Boolean shortField = false;
 	}
 
 	/** 에러 알림 메시지 생성 */
@@ -135,9 +135,7 @@ public class SlackMessage {
 				.build();
 	}
 
-	/**
-	 * 긴 텍스트 자르기
-	 */
+	/** 긴 텍스트 파싱 */
 	private static String truncate(String text, int maxLength) {
 		if (text == null || text.length() <= maxLength) {
 			return text;

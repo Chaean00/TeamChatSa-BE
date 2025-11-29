@@ -20,7 +20,7 @@ public class NotificationRes {
 	private String title;
 	private String content;
 	private String link;
-	private Boolean isRead;  // 읽음 여부 (UI 색상 구분)
+	private Boolean isRead;
 	private LocalDateTime createdAt;
 
 	public static NotificationRes fromEntity(Notification notification) {

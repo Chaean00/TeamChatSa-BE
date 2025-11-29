@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 
 /**
  * 팀 가입 신청 생성 이벤트
- *
  */
 @Getter
 @AllArgsConstructor

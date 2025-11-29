@@ -37,7 +37,7 @@ public class AsyncConfig implements AsyncConfigurer {
 			log.error("비동기 메서드 실행 중 예외 발생: method={}, params={}, error={}",
 					method.getName(), params, ex.getMessage(), ex);
 
-			// 🚨 Slack 알림 전송
+			//  Slack 알림 전송
 			slackAlertService.sendAsyncFailureAlert(
 					method.getName(),
 					ex.getMessage(),

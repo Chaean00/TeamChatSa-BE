@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-		log.info("[DataIntegrityViolationException]: {}", ex.getMessage(), ex);
+		log.warn("[DataIntegrityViolationException]: {}", ex.getMessage(), ex);
 		String message = resolveMessage(ex);
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(RedisConnectionFailureException.class)
 	public ResponseEntity<ApiResponse<Void>> handleRedisConnectionFailureException(RedisConnectionFailureException ex) {
-		log.info("[RedisConnectionFailureException]: {}", ex.getMessage(), ex);
+		log.warn("[RedisConnectionFailureException]: {}", ex.getMessage(), ex);
 		return ResponseEntity
 				.status(HttpStatus.SERVICE_UNAVAILABLE)
 				.body(ApiResponse.fail("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
 		String requestUri = request.getRequestURI();
 		String userId = getCurrentUserId();
 
-		log.info("[Exception]: {}", ex.getMessage(), ex);
+		log.warn("[Exception]: {}", ex.getMessage(), ex);
 
 		slackAlertService.sendErrorAlert(
 				"[Unexpected Exception]",
