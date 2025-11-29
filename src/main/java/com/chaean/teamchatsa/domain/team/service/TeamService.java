@@ -10,12 +10,17 @@ import com.chaean.teamchatsa.domain.team.model.*;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
+import com.chaean.teamchatsa.domain.user.model.User;
+import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
+import com.chaean.teamchatsa.domain.team.event.TeamApplicationCreatedEvent;
+import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -23,6 +28,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -33,6 +39,8 @@ public class TeamService {
 	private final TeamRepository teamRepo;
 	private final TeamMemberRepository teamMemberRepo;
 	private final TeamJoinRequestRepository teamJoinRequestRepo;
+	private final UserRepository userRepo;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	@Loggable
@@ -111,7 +119,26 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
 		}
 
-		teamJoinRequestRepo.save(TeamApplication.of(teamId, userId, req.getMessage()));
+		// 신청자 정보 조회 (닉네임 필요)
+		User applicant = userRepo.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 사용자입니다."));
+
+		TeamApplication application = teamJoinRequestRepo.save(
+				TeamApplication.of(teamId, userId, req.getMessage())
+		);
+
+		// 팀 가입 신청 이벤트 발행
+		eventPublisher.publishEvent(new TeamApplicationCreatedEvent(
+				teamId,
+				userId,
+				applicant.getNickname(),
+				application.getId(),
+				req.getMessage(),
+				LocalDateTime.now()
+		));
+
+		log.info("팀 가입 신청 이벤트 발행: teamId={}, userId={}, applicationId={}",
+				teamId, userId, application.getId());
 	}
 
 	@Transactional
@@ -184,9 +211,8 @@ public class TeamService {
 	@DistributedLock(key = "'team:application:accept:' + #applicationId")
 	public void acceptTeamApplication(Long teamId, Long applicationId, Long userId) {
 		// 팀 존재 여부 확인
-		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
-			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
-		}
+		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		// 팀장 또는 부팀장 권한 확인
 		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)
@@ -228,6 +254,17 @@ public class TeamService {
 				.findPendingApplicationsByUserIdExcluding(application.getUserId(), applicationId);
 
 		otherPendingApplications.forEach(app -> app.updateStatus(JoinStatus.REJECTED));
+
+		// 팀 가입 승인 이벤트 발행
+		eventPublisher.publishEvent(new TeamApplicationProcessedEvent(
+				application.getUserId(),
+				team.getName(),
+				JoinStatus.ACCEPTED,
+				LocalDateTime.now()
+		));
+
+		log.info("팀 가입 승인 이벤트 발행: teamId={}, applicantUserId={}, status=ACCEPTED",
+				teamId, application.getUserId());
 	}
 
 	/** 팀 가입 신청 거절 */
@@ -235,9 +272,8 @@ public class TeamService {
 	@Loggable
 	public void rejectTeamApplication(Long teamId, Long applicationId, Long userId) {
 		// 팀 존재 여부 확인
-		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
-			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
-		}
+		Team team = teamRepo.findByIdAndIsDeletedFalse(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
 		// 팀장 또는 부팀장 권한 확인
 		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)
@@ -258,5 +294,16 @@ public class TeamService {
 
 		// 가입 신청 상태 변경
 		application.updateStatus(JoinStatus.REJECTED);
+
+		// 팀 가입 거절 이벤트 발행
+		eventPublisher.publishEvent(new TeamApplicationProcessedEvent(
+				application.getUserId(),
+				team.getName(),
+				JoinStatus.REJECTED,
+				LocalDateTime.now()
+		));
+
+		log.info("팀 가입 거절 이벤트 발행: teamId={}, applicantUserId={}, status=REJECTED",
+				teamId, application.getUserId());
 	}
 }

@@ -17,10 +17,13 @@ import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
+import com.chaean.teamchatsa.domain.match.event.MatchApplicationCreatedEvent;
+import com.chaean.teamchatsa.domain.match.event.MatchApplicationProcessedEvent;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +45,7 @@ public class MatchService {
 	private final MatchApplicationRepository matchApplicationRepo;
 	private final TeamMemberRepository teamMemberRepo;
 	private final TeamRepository teamRepo;
+	private final ApplicationEventPublisher eventPublisher;
 
 	/** 매치 게시물 등록 */
 	@Transactional
@@ -146,6 +150,10 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 신청한 매치입니다.");
 		}
 
+		// 신청 팀 정보 조회
+		Team applicantTeam = teamRepo.findByIdAndIsDeletedFalse(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "팀을 찾을 수 없습니다."));
+
 		MatchApplication matchApplication = MatchApplication.builder()
 				.postId(matchPost.getId())
 				.applicantTeamId(teamId)
@@ -154,6 +162,18 @@ public class MatchService {
 
 		try {
 			matchApplicationRepo.save(matchApplication);
+
+			// 매치 신청 이벤트 발행
+			eventPublisher.publishEvent(new MatchApplicationCreatedEvent(
+					matchId,
+					matchPost.getTeamId(),  // 게시물 작성 팀 ID
+					teamId,  // 신청 팀 ID
+					applicantTeam.getName(),
+					LocalDateTime.now()
+			));
+
+			log.info("매치 신청 이벤트 발행: matchId={}, postOwnerTeamId={}, applicantTeamId={}",
+					matchId, matchPost.getTeamId(), teamId);
 		} catch (DataIntegrityViolationException e) {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 신청한 매치입니다.");
 		}
@@ -227,6 +247,17 @@ public class MatchService {
 		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
+		// 매치 신청 승인 이벤트 발행
+		eventPublisher.publishEvent(new MatchApplicationProcessedEvent(
+				matchApplication.getApplicantTeamId(),
+				matchPost.getTitle(),
+				MatchApplicationStatus.ACCEPTED,
+				LocalDateTime.now()
+		));
+
+		log.info("매치 신청 승인 이벤트 발행: matchId={}, applicantTeamId={}, status=ACCEPTED",
+				matchId, matchApplication.getApplicantTeamId());
+
 		return team.getName();
 	}
 
@@ -249,6 +280,17 @@ public class MatchService {
 
 		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
+
+		// 매치 신청 거절 이벤트 발행
+		eventPublisher.publishEvent(new MatchApplicationProcessedEvent(
+				matchApplication.getApplicantTeamId(),
+				matchPost.getTitle(),
+				MatchApplicationStatus.REJECTED,
+				LocalDateTime.now()
+		));
+
+		log.info("매치 신청 거절 이벤트 발행: matchId={}, applicantTeamId={}, status=REJECTED",
+				matchId, matchApplication.getApplicantTeamId());
 
 		return team.getName();
 	}
