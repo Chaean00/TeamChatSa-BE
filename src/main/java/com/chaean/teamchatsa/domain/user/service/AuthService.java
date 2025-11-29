@@ -52,7 +52,6 @@ public class AuthService {
 		userRepo.save(user);
 	}
 
-	@Transactional
 	@Loggable
 	public LoginRes login(LoginReq req) {
 		Optional<User> user = userRepo.findByEmailAndIsDeletedFalse(req.getEmail());

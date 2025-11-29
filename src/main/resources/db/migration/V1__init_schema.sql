@@ -68,8 +68,7 @@ CREATE TABLE IF NOT EXISTS "match_post"
     place_name VARCHAR(120),
 
     -- 편의용
-    location GEOGRAPHY(POINT, 4326)
-        GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geometry) STORED,
+    location GEOMETRY(POINT, 4326) GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lng, lat), 4326)) STORED,
 
     status VARCHAR(8) NOT NULL DEFAULT 'OPEN',
     accepted_application_id BIGINT NULL ,

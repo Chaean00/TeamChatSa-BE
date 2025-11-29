@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.global.exception;
 
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
+import com.chaean.teamchatsa.infra.slack.SlackAlertService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -9,18 +10,25 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
+	private final SlackAlertService slackAlertService;
+
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ApiResponse> handleBusinessException(BusinessException ex, HttpServletRequest req) {
-		log.info("[BusinessException]: {}", ex.getMessage(), ex);
+		log.warn("[BusinessException]: {}", ex.getMessage(), ex);
 		return ResponseEntity
 				.status(ex.getErrorCode().getStatus())
 				.body(ApiResponse.fail(ex.getMessage()));
@@ -28,7 +36,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<ApiResponse> handleConstraintViolationException(ConstraintViolationException ex) {
-		log.info("[ConstraintViolationException]: {}", ex.getMessage(), ex);
+		log.warn("[ConstraintViolationException]: {}", ex.getMessage(), ex);
 
 		String message = ex.getConstraintViolations().stream()
 				.map(v -> {
@@ -45,7 +53,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-		log.info("[MethodArgumentNotValidException]: {}", ex.getMessage(), ex);
+		log.warn("[MethodArgumentNotValidException]: {}", ex.getMessage(), ex);
 
 		String message = ex.getBindingResult().getFieldErrors().stream()
 				.map(err -> err.getField() + " " + (err.getDefaultMessage() != null ? err.getDefaultMessage() : "유효하지 않습니다"))
@@ -59,7 +67,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-		log.info("[DataIntegrityViolationException]: {}", ex.getMessage(), ex);
+		log.warn("[DataIntegrityViolationException]: {}", ex.getMessage(), ex);
 		String message = resolveMessage(ex);
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
@@ -90,17 +98,51 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(RedisConnectionFailureException.class)
 	public ResponseEntity<ApiResponse<Void>> handleRedisConnectionFailureException(RedisConnectionFailureException ex) {
-		log.info("[RedisConnectionFailureException]: {}", ex.getMessage(), ex);
+		log.warn("[RedisConnectionFailureException]: {}", ex.getMessage(), ex);
 		return ResponseEntity
 				.status(HttpStatus.SERVICE_UNAVAILABLE)
 				.body(ApiResponse.fail("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
 	}
 
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
-		log.info("[Exception]: {}", ex.getMessage(), ex);
+	public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex, HttpServletRequest request) {
+
+		String errorMessage = ex.getMessage() != null ? ex.getMessage() : "알 수 없는 오류가 발생했습니다.";
+		String requestUri = request.getRequestURI();
+		String userId = getCurrentUserId();
+
+		log.warn("[Exception]: {}", ex.getMessage(), ex);
+
+		slackAlertService.sendErrorAlert(
+				"[Unexpected Exception]",
+				errorMessage,
+				getStackTraceAsString(ex),
+				requestUri,
+				userId
+		);
+
 		return ResponseEntity
 				.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponse.fail("서버 내부 오류가 발생했습니다."));
+				.body(ApiResponse.fail(errorMessage));
+	}
+
+	private String getCurrentUserId() {
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			if (authentication != null && authentication.getPrincipal() instanceof Long) {
+				return authentication.getPrincipal().toString();
+			}
+		} catch (Exception e) {
+			log.debug("Failed to get userId from SecurityContext", e);
+		}
+		return "Anonymous";
+	}
+
+	/** Exception의 Stack Trace를 문자열로 변환 */
+	private String getStackTraceAsString(Exception e) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		return sw.toString();
 	}
 }
