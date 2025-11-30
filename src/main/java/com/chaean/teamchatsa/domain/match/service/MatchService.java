@@ -19,8 +19,12 @@ import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.domain.match.event.MatchApplicationCreatedEvent;
 import com.chaean.teamchatsa.domain.match.event.MatchApplicationProcessedEvent;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
+import com.chaean.teamchatsa.global.common.util.CacheKeyGenerator;
+import com.chaean.teamchatsa.global.common.util.RedisCacheUtil;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -32,6 +36,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +51,10 @@ public class MatchService {
 	private final TeamMemberRepository teamMemberRepo;
 	private final TeamRepository teamRepo;
 	private final ApplicationEventPublisher eventPublisher;
+	private final RedisCacheUtil cacheUtil;
+	private final CacheKeyGenerator cacheKeyGen;
+
+	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
 	/** 매치 게시물 등록 */
 	@Transactional
@@ -61,8 +70,10 @@ public class MatchService {
 		}
 
 		MatchPost matchPost = req.toEntity(teamId);
-
 		matchPostRepo.save(matchPost);
+
+		// 매치 목록 캐시 무효화
+		deleteMatchPostsCache();
 	}
 
 	/** 매치 게시물 삭제 */
@@ -83,34 +94,70 @@ public class MatchService {
 		}
 
 		matchPost.softDelete();
+
+		// 매치 목록 캐시 무효화
+		deleteMatchPostsCache();
 	}
 
 	/** 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public Slice<MatchPostListRes> findMatchPostList(MatchPostSearchReq req) {
-		// 추후에 동적 정렬 조건 설정 가능
+	public SliceResponse<MatchPostListRes> findMatchPosts(MatchPostSearchReq req) {
+		// 캐싱 대상 확인
+		if (!cacheKeyGen.isCacheable(req)) {
+			return SliceResponse.from(fetchMatchPostsDatabase(req));
+		}
+
+		// 캐시 키 생성
+		String cacheKey = cacheKeyGen.generateMatchListKey(req);
+
+		// 캐시 조회
+		SliceResponse<MatchPostListRes> cached = cacheUtil.get(
+				cacheKey,
+				new TypeReference<SliceResponse<MatchPostListRes>>() {}
+		);
+
+		if (cached != null) {
+			log.info("Cache HIT: {}", cacheKey);
+			return cached;
+		}
+
+		// 캐시 미스 → DB 조회
+		log.info("Cache MISS: {}", cacheKey);
+		Slice<MatchPostListRes> result = fetchMatchPostsDatabase(req);
+		SliceResponse<MatchPostListRes> response = SliceResponse.from(result);
+
+		// 캐시 저장
+		cacheUtil.set(cacheKey, response, CACHE_TTL);
+
+		return response;
+	}
+
+	private Slice<MatchPostListRes> fetchMatchPostsDatabase(MatchPostSearchReq req) {
 		Sort sort = Sort.by(
 				Sort.Order.asc("matchDate"),
 				Sort.Order.desc("id")
 		);
-
 		Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), sort);
-
 		return matchPostRepo.findMatchPostsWithPagination(req, pageable);
+	}
+
+	private void deleteMatchPostsCache() {
+		String pattern = cacheKeyGen.getMatchListInvalidationPattern();
+		cacheUtil.deleteByPattern(pattern);
 	}
 
 	/** 특정 팀의 매치 게시물 목록 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public Slice<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
+	public SliceResponse<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
 		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
 		}
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending().and(Sort.by("id").descending()));
 
-		return matchPostRepo.findMatchPostsByTeamId(teamId, pageable);
+		return SliceResponse.from(matchPostRepo.findMatchPostsByTeamId(teamId, pageable));
 	}
 
 	/** 매치 게시물 상세 조회 */
@@ -257,6 +304,9 @@ public class MatchService {
 
 		log.info("매치 신청 승인 이벤트 발행: matchId={}, applicantTeamId={}, status=ACCEPTED",
 				matchId, matchApplication.getApplicantTeamId());
+
+		// 매치 목록 캐시 무효화 (상태가 CLOSED로 변경됨)
+		deleteMatchPostsCache();
 
 		return team.getName();
 	}

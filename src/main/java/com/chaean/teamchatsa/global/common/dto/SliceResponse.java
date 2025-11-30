@@ -1,7 +1,9 @@
 package com.chaean.teamchatsa.global.common.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
@@ -10,9 +12,11 @@ import java.util.List;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SliceResponse<T> {
-	private final List<T> content;
-	private final boolean last;
+	private List<T> content;
+	private boolean last;
 
 	public static <T> SliceResponse<T> from(Slice<T> slice) {
 		return SliceResponse.<T>builder()

@@ -16,6 +16,7 @@ import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.domain.team.event.TeamApplicationCreatedEvent;
 import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -78,9 +79,9 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public Slice<TeamListRes> findTeamList(int page, int size) {
+	public SliceResponse<TeamListRes> findTeamList(int page, int size) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-		return teamRepo.findTeamListWithPagination(pageable);
+		return SliceResponse.from(teamRepo.findTeamListWithPagination(pageable));
 	}
 
 	@Transactional(readOnly = true)
