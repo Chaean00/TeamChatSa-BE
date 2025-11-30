@@ -12,11 +12,11 @@ import com.chaean.teamchatsa.domain.match.service.MatchService;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -56,10 +56,11 @@ public class MatchController {
 
 	@Operation(summary = "매치 게시물 목록 조회 API", description = "매치 게시물 목록을 조회합니다.(무한스크롤)")
 	@GetMapping("")
-	public ResponseEntity<ApiResponse<Slice<MatchPostListRes>>> getMatches(
+	public ResponseEntity<ApiResponse<SliceResponse<MatchPostListRes>>> getMatches(
 			@ModelAttribute MatchPostSearchReq req
 	) {
-		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", matchService.findMatchPostList(req)));
+		SliceResponse<MatchPostListRes> response = matchService.findMatchPosts(req);
+		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", response));
 	}
 
 	@Operation(summary = "위치 기반 매치 검색 API", description = "지도 범위(BoundingBox) 내의 매치 게시물을 검색합니다.")
@@ -141,12 +142,12 @@ public class MatchController {
 
 	@Operation(summary = "특정 팀의 매치 게시물 목록 조회 API", description = "특정 팀이 작성한 매치 게시물 목록을 조회합니다.")
 	@GetMapping("/{teamId}/team-posts")
-	public ResponseEntity<ApiResponse<Slice<MatchPostListRes>>> getMatchByTeamId(
+	public ResponseEntity<ApiResponse<SliceResponse<MatchPostListRes>>> getMatchByTeamId(
 			@PathVariable Long teamId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size
 	) {
-		Slice<MatchPostListRes> matchPosts = matchService.findMatchPostListByTeamId(teamId, page, size);
-		return ResponseEntity.ok(ApiResponse.success("특정 팀의 매치 게시물 목록 조회 성공", matchPosts));
+		SliceResponse<MatchPostListRes> response = matchService.findMatchPostListByTeamId(teamId, page, size);
+		return ResponseEntity.ok(ApiResponse.success("특정 팀의 매치 게시물 목록 조회 성공", response));
 	}
 }
