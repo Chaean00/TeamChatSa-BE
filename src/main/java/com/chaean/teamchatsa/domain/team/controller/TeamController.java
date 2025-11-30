@@ -10,12 +10,10 @@ import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.service.TeamService;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
 import com.chaean.teamchatsa.global.common.dto.ApiResponse;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,12 +41,12 @@ public class TeamController {
 
 	@Operation(summary = "팀 목록 조회 API", description = "팀 목록을 페이징 처리하여 조회합니다. (무한스크롤)")
 	@GetMapping("")
-	public ResponseEntity<ApiResponse<Slice<TeamListRes>>> getTeamList(
+	public ResponseEntity<ApiResponse<SliceResponse<TeamListRes>>> getTeamList(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size
 	) {
-		Slice<TeamListRes> res = teamService.findTeamList(page, size);
-		return ResponseEntity.ok(ApiResponse.success(res));
+		SliceResponse<TeamListRes> response = teamService.findTeamList(page, size);
+		return ResponseEntity.ok(ApiResponse.success(response));
 	}
 
 	@Operation(summary = "팀 상세 조회 API", description = "특정 팀의 상세 정보를 조회합니다.")
