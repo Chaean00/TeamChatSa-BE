@@ -9,6 +9,7 @@ import com.chaean.teamchatsa.domain.team.model.*;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
+import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -103,20 +104,43 @@ class TeamServiceTest {
     class FindTeamList {
 
         @Test
-        @DisplayName("성공")
-        void success() {
+        @DisplayName("성공 - 팀명 필터 없음")
+        void success_without_filter() {
             // given
             int page = 0;
             int size = 10;
+            String teamName = null;
             Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
-            Slice<TeamListRes> expected = new SliceImpl<>(Collections.emptyList());
-            given(teamRepo.findTeamListWithPagination(pageable)).willReturn(expected);
+            Slice<TeamListRes> sliceFromRepo = new SliceImpl<>(Collections.emptyList());
+            // teamName이 null이면 findTeamListByNameWithPagination 호출
+            given(teamRepo.findTeamListWithPagination(pageable)).willReturn(sliceFromRepo);
 
             // when
-            Slice<TeamListRes> result = teamService.findTeamList(page, size);
+            SliceResponse<TeamListRes> result = teamService.findTeamList(page, size, teamName);
 
             // then
-            assertThat(result).isEqualTo(expected);
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.isLast()).isTrue();
+        }
+
+        @Test
+        @DisplayName("성공 - 팀명 필터 있음")
+        void success_with_filter() {
+            // given
+            int page = 0;
+            int size = 10;
+            String teamName = "테스트팀";
+            Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+            Slice<TeamListRes> sliceFromRepo = new SliceImpl<>(Collections.emptyList());
+            // teamName이 있으면 findTeamListWithPagination 호출
+            given(teamRepo.findTeamListByNameWithPagination(pageable, teamName)).willReturn(sliceFromRepo);
+
+            // when
+            SliceResponse<TeamListRes> result = teamService.findTeamList(page, size, teamName);
+
+            // then
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.isLast()).isTrue();
         }
     }
 
