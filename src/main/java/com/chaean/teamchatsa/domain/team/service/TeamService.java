@@ -43,6 +43,7 @@ public class TeamService {
 	private final UserRepository userRepo;
 	private final ApplicationEventPublisher eventPublisher;
 
+	/** 팀 등록 */
 	@Transactional
 	@Loggable
 	public void registerTeam(Long userId, TeamCreateReq req) {
@@ -77,13 +78,27 @@ public class TeamService {
 		teamMemberRepo.save(teamMember);
 	}
 
+	/** 팀 목록 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<TeamListRes> findTeamList(int page, int size) {
+	public SliceResponse<TeamListRes> findTeamList(int page, int size, String teamName) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-		return SliceResponse.from(teamRepo.findTeamListWithPagination(pageable));
+
+		if (teamName == null || teamName.isBlank()) {
+			return SliceResponse.from(teamRepo.findTeamListWithPagination(pageable));
+		} else {
+			return SliceResponse.from(teamRepo.findTeamListByNameWithPagination(pageable, teamName));
+		}
 	}
 
+//	@Transactional(readOnly = true)
+//	@Loggable
+//	public SliceResponse<TeamListRes> findTeamByName(int page, int size, String teamName) {
+//		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+//		return SliceResponse.from(teamRepo.findTeamListByNameWithPagination(pageable, teamName));
+//	}
+
+	/** 팀 상세 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
 	public TeamDetailRes findTeamDetail(Long teamId, Long userId) {
@@ -99,6 +114,7 @@ public class TeamService {
 		return TeamDetailRes.fromEntity(team, userRole, memberCount);
 	}
 
+	/** 팀 가입 신청 */
 	@Transactional
 	@Loggable
 	public void applyToTeam(Long teamId, Long userId, TeamJoinReq req) {
@@ -142,6 +158,7 @@ public class TeamService {
 				teamId, userId, application.getId());
 	}
 
+	/** 팀 삭제 */
 	@Transactional
 	@Loggable
 	public void deleteTeam(Long teamId) {
@@ -161,6 +178,7 @@ public class TeamService {
 		}
 	}
 
+	/** 팀원 조회 */
 	@Transactional(readOnly = true)
 	@Loggable
 	public List<TeamMemberRes> findTeamMembers(Long teamId) {
@@ -173,6 +191,7 @@ public class TeamService {
 		return teamMemberRepo.findTeamMembersByTeamId(teamId);
 	}
 
+	/** 팀원 권한 변경 */
 	@Transactional
 	public void changeMemberRole(Long teamId, Long userId, TeamRole newRole) {
 		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId)

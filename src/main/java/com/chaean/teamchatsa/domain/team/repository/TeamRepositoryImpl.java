@@ -4,6 +4,9 @@ import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
 import com.chaean.teamchatsa.domain.team.model.QTeam;
 import com.chaean.teamchatsa.domain.team.model.QTeamMember;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +53,50 @@ public class TeamRepositoryImpl implements TeamRepositoryCustom {
 				.where(t.isDeleted.eq(false))
 				.groupBy(t.id, t.name, t.area, t.img, t.description, t.createdAt)
 				.orderBy(t.createdAt.desc(), t.id.desc())
+				.offset(pageable.getOffset())
+				.limit(pageable.getPageSize() + 1)
+				.fetch();
+
+		// Slice 생성 (무한 스크롤)
+		return createSlice(content, pageable);
+	}
+
+	@Override
+	public Slice<TeamListRes> findTeamListByNameWithPagination(Pageable pageable, String teamName) {
+		QTeam t = QTeam.team;
+		QTeamMember tm = QTeamMember.teamMember;
+
+		NumberTemplate<Double> score = Expressions.numberTemplate(
+				Double.class,
+				"similarity({0}, {1})",
+				t.name,
+				teamName
+		);
+
+		BooleanExpression nameMatch =
+				Expressions.booleanTemplate("{0} ILIKE {1}", t.name, "%" + teamName + "%");
+
+		List<TeamListRes> content = queryFactory
+				.select(Projections.constructor(
+						TeamListRes.class,
+						t.id,
+						t.name,
+						t.area,
+						t.img,
+						t.description,
+						tm.id.count()
+				))
+				.from(t)
+				.leftJoin(tm).on(
+						tm.teamId.eq(t.id)
+								.and(tm.isDeleted.eq(false))
+				)
+				.where(
+						t.isDeleted.eq(false),
+						nameMatch
+				)
+				.groupBy(t.id, t.name, t.area, t.img, t.description, t.createdAt)
+				.orderBy(score.desc(), t.id.desc())
 				.offset(pageable.getOffset())
 				.limit(pageable.getPageSize() + 1)
 				.fetch();

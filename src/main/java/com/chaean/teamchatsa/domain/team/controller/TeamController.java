@@ -43,9 +43,10 @@ public class TeamController {
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<SliceResponse<TeamListRes>>> getTeamList(
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) String teamName
 	) {
-		SliceResponse<TeamListRes> response = teamService.findTeamList(page, size);
+		SliceResponse<TeamListRes> response = teamService.findTeamList(page, size, teamName);
 		return ResponseEntity.ok(ApiResponse.success(response));
 	}
 
