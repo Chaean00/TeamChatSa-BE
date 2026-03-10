@@ -1,6 +1,5 @@
 package com.chaean.teamchatsa.domain.match.dto.request;
 
-import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,18 +35,4 @@ public class MatchPostCreateReq {
 	private String address;
 	@Size(max = 120)
 	private String placeName;
-
-	public MatchPost toEntity(Long teamId) {
-		return MatchPost.builder()
-				.teamId(teamId)
-				.title(this.title)
-				.content(this.content)
-				.headCount(this.headCount)
-				.address(this.address)
-				.matchDate(this.matchDate)
-				.lat(this.lat)
-				.lng(this.lng)
-				.placeName(this.placeName)
-				.build();
-	}
 }
