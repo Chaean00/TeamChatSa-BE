@@ -1,7 +1,6 @@
 package com.chaean.teamchatsa.domain.user.model;
 
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
-import com.chaean.teamchatsa.global.common.model.TimeEntity;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,13 +11,16 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Getter
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "oauth_account")
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class OAuthAccount extends DeleteAndTimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE oauth_account SET deleted_at = NOW() WHERE id = ?")
+public class OAuthAccount extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -68,14 +70,14 @@ public class OAuthAccount extends DeleteAndTimeEntity {
     public static OAuthAccount kakaoLink(Long userId, String providerUserId, String emailFromProvider, 
                                          String profileNickname, String profileImageUrl
     ) {
-        return OAuthAccount.builder()
-                .userId(userId)
-                .provider(OAuthProvider.KAKAO)
-                .providerUserId(providerUserId)
-                .emailFromProvider(emailFromProvider)
-                .profileNickname(profileNickname)
-                .profileImageUrl(profileImageUrl)
-                .connectedAt(LocalDateTime.now())
-                .build();
+        OAuthAccount account = new OAuthAccount();
+        account.userId = userId;
+        account.provider = OAuthProvider.KAKAO;
+        account.providerUserId = providerUserId;
+        account.emailFromProvider = emailFromProvider;
+        account.profileNickname = profileNickname;
+        account.profileImageUrl = profileImageUrl;
+        account.connectedAt = LocalDateTime.now();
+        return account;
     }
 }

@@ -1,18 +1,21 @@
 package com.chaean.teamchatsa.domain.team.model;
 
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Getter
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "team")
-public class Team extends DeleteAndTimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE team SET deleted_at = NOW() WHERE id = ?")
+public class Team extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -52,4 +55,17 @@ public class Team extends DeleteAndTimeEntity {
     @Size(max = 255)
     @Column(name = "img")
     private String img;
+
+    public static Team of(Long leaderUserId, String name, String area, String description, ContactType contactType, String contact, String level, String img) {
+        Team team = new Team();
+        team.leaderUserId = leaderUserId;
+        team.name = name;
+        team.area = area;
+        team.description = description;
+        team.contactType = contactType;
+        team.contact = contact;
+        team.level = level;
+        team.img = img;
+        return team;
+    }
 }

@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.notification.model;
 
-import com.chaean.teamchatsa.global.common.model.TimeEntity;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -8,13 +8,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Getter
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "notification")
-public class Notification extends TimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE notification SET deleted_at = NOW() WHERE id = ?")
+public class Notification extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +46,6 @@ public class Notification extends TimeEntity {
 	private String link;
 
 	@NotNull
-	@Builder.Default
 	@Column(name = "is_read", nullable = false)
 	private Boolean isRead = false;
 

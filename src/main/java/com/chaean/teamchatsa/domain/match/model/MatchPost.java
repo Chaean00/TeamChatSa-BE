@@ -1,28 +1,42 @@
 package com.chaean.teamchatsa.domain.match.model;
 
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
+import com.chaean.teamchatsa.domain.team.model.Team;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "match_post")
-public class MatchPost extends DeleteAndTimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE match_post SET deleted_at = NOW() WHERE id = ?")
+public class MatchPost extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @NotNull
-    @Column(name = "team_id", nullable = false)
-    private Long teamId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "team_id",
+        nullable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    private Team team;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "accepted_application_id",
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    private MatchApplication acceptedApplication;
 
     @Size(max = 100)
     @NotNull
@@ -30,7 +44,7 @@ public class MatchPost extends DeleteAndTimeEntity {
     private String title;
 
     @NotNull
-    @Column(name = "content", nullable = false, length = Integer.MAX_VALUE)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @NotNull
@@ -60,14 +74,24 @@ public class MatchPost extends DeleteAndTimeEntity {
     @Column(name = "place_name", length = 120)
     private String placeName;
 
-    @Column(name = "accepted_application_id")
-    private Long acceptedApplicationId;
-
     @NotNull
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MatchPostStatus status = MatchPostStatus.OPEN;
+
+    public static MatchPost of(Team team, String title, String content, int headCount, LocalDateTime matchDate, Double lat, Double lng, String address, String placeName) {
+        MatchPost post = new MatchPost();
+        post.team = team;
+        post.title = title;
+        post.content = content;
+        post.headCount = headCount;
+        post.matchDate = matchDate;
+        post.lat = lat;
+        post.lng = lng;
+        post.address = address;
+        post.placeName = placeName;
+        return post;
+    }
 
     public void updateStatus(MatchPostStatus status) {
         if (this.status == status) {

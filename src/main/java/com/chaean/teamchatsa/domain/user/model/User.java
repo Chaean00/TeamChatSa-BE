@@ -2,7 +2,7 @@ package com.chaean.teamchatsa.domain.user.model;
 
 import com.chaean.teamchatsa.domain.team.model.Position;
 import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,16 +11,19 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Getter
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "\"user\"", uniqueConstraints = {
         @UniqueConstraint(name = "uc_user_nickname", columnNames = {"nickname"}),
         @UniqueConstraint(name = "uc_user_email", columnNames = {"email"})
 })
-public class User extends DeleteAndTimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE \"user\" SET deleted_at = NOW() WHERE id = ?")
+public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -50,22 +53,20 @@ public class User extends DeleteAndTimeEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Builder.Default
     @Column(name = "role", nullable = false)
     private UserRole role = UserRole.USER;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Builder.Default
     @Column(name = "position", nullable = false)
     private Position position = Position.ALL;
 
     public static User of(String username, String email, String passwordHash) {
-        return User.builder()
-                .username(username)
-                .email(email)
-                .password(passwordHash)
-                .build();
+        User user = new User();
+        user.username = username;
+        user.email = email;
+        user.password = passwordHash;
+        return user;
     }
 
     public void update(UserUpdateReq req) {

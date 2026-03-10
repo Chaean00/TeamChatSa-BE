@@ -1,20 +1,23 @@
 package com.chaean.teamchatsa.domain.team.model;
 
-import com.chaean.teamchatsa.global.common.model.TimeEntity;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Getter
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "team_application", uniqueConstraints = {
 		@UniqueConstraint(name = "uc_team_application_user_id", columnNames = {"team_id", "user_id"})
 })
-public class TeamApplication extends TimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE team_application SET deleted_at = NOW() WHERE id = ?")
+public class TeamApplication extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", nullable = false)
@@ -29,7 +32,6 @@ public class TeamApplication extends TimeEntity {
 	private Long userId;
 
 	@NotNull
-	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 30)
 	private JoinStatus status = JoinStatus.PENDING;
@@ -39,11 +41,11 @@ public class TeamApplication extends TimeEntity {
 	private String message;
 
 	public static TeamApplication of(Long teamId, Long userId, String message) {
-		return TeamApplication.builder()
-				.teamId(teamId)
-				.userId(userId)
-				.message(message)
-				.build();
+		TeamApplication application = new TeamApplication();
+		application.teamId = teamId;
+		application.userId = userId;
+		application.message = message;
+		return application;
 	}
 
 	public void updateStatus(JoinStatus status) {
