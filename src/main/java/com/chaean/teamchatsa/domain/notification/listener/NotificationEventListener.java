@@ -41,7 +41,7 @@ public class NotificationEventListener {
 				event.getTeamId(), event.getApplicantUserId());
 
 		// 팀장 및 부팀장 조회
-		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleInAndIsDeletedFalse(
+		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleIn(
 				event.getTeamId(),
 				List.of(TeamRole.LEADER, TeamRole.CO_LEADER)
 		);
@@ -99,7 +99,7 @@ public class NotificationEventListener {
 				event.getMatchId(), event.getApplicantTeamId());
 
 		// 매치 게시물 작성 팀의 팀장/부팀장 조회
-		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleInAndIsDeletedFalse(
+		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleIn(
 				event.getPostOwnerTeamId(),
 				List.of(TeamRole.LEADER, TeamRole.CO_LEADER)
 		);
@@ -139,7 +139,7 @@ public class NotificationEventListener {
 				: "\"" + event.getMatchTitle() + "\" 매치 신청이 거절되었습니다.";
 
 		// 신청 팀의 팀장/부팀장 조회
-		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleInAndIsDeletedFalse(
+		List<TeamMember> leaders = teamMemberRepo.findByTeamIdAndRoleIn(
 				event.getApplicantTeamId(),
 				List.of(TeamRole.LEADER, TeamRole.CO_LEADER)
 		);

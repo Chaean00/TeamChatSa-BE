@@ -37,7 +37,7 @@ public class AuthService {
 		if (req.getPassword().length() < 8) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 
 		if (req.getPhone() != null) {
-			boolean existsPhone = userRepo.existsByPhoneAndIsDeletedFalse(req.getPhone());
+			boolean existsPhone = userRepo.existsByPhone(req.getPhone());
 			if (existsPhone) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 회원가입을 진행한 핸드폰 번호입니다.");
 		}
 
@@ -54,7 +54,7 @@ public class AuthService {
 
 	@Loggable
 	public LoginRes login(LoginReq req) {
-		Optional<User> user = userRepo.findByEmailAndIsDeletedFalse(req.getEmail());
+		Optional<User> user = userRepo.findByEmail(req.getEmail());
 
 		if (user.isEmpty() || !encoder.matches(req.getPassword(), user.get().getPassword())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "잘못된 로그인 정보입니다.");
@@ -80,7 +80,7 @@ public class AuthService {
 		// RT 검증
 		Long userId = jwtProvider.parseUserId(refreshToken);
 
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 		// 기존 RT 삭제

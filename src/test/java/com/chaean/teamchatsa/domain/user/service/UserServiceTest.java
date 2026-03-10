@@ -53,9 +53,9 @@ class UserServiceTest {
 		public void success_localAccount() {
 			//given
 			User user = new User(1L, "테스터", "테스터_닉네임", "abc@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
-			given(userRepo.findByIdAndIsDeletedFalse(1L)).willReturn(Optional.of(user));
-			given(teamMemberRepo.findByUserIdAndIsDeletedFalse(1L)).willReturn(Optional.empty());
-			given(authRepo.existsByUserIdAndIsDeletedFalse(1L)).willReturn(false);
+			given(userRepo.findById(1L)).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserId(1L)).willReturn(Optional.empty());
+			given(authRepo.existsByUserId(1L)).willReturn(false);
 
 			//when
 			UserRes result = userService.findUser(1L);
@@ -65,9 +65,9 @@ class UserServiceTest {
 			assertThat(result.getName()).isEqualTo("테스터");
 			assertThat(result.getTeamId()).isNull();
 			assertThat(result.getTeamRole()).isNull();
-			verify(userRepo).findByIdAndIsDeletedFalse(1L);
-			verify(teamMemberRepo).findByUserIdAndIsDeletedFalse(1L);
-			verify(authRepo).existsByUserIdAndIsDeletedFalse(1L);
+			verify(userRepo).findById(1L);
+			verify(teamMemberRepo).findByUserId(1L);
+			verify(authRepo).existsByUserId(1L);
 		}
 
 		@Test
@@ -83,9 +83,9 @@ class UserServiceTest {
 					.role(TeamRole.MEMBER)
 					.build();
 			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null, OAuthProvider.KAKAO);
-			given(userRepo.findByIdAndIsDeletedFalse(2L)).willReturn(Optional.of(user));
-			given(teamMemberRepo.findByUserIdAndIsDeletedFalse(2L)).willReturn(Optional.of(teamMember));
-			given(authRepo.existsByUserIdAndIsDeletedFalse(2L)).willReturn(true);
+			given(userRepo.findById(2L)).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserId(2L)).willReturn(Optional.of(teamMember));
+			given(authRepo.existsByUserId(2L)).willReturn(true);
 
 			//when
 			UserRes result = userService.findUser(2L);
@@ -97,16 +97,16 @@ class UserServiceTest {
 			assertThat(result.getName()).isEqualTo("테스터");
 			assertThat(result.getTeamId()).isEqualTo(10L);
 			assertThat(result.getTeamRole()).isEqualTo(TeamRole.MEMBER);
-			verify(userRepo).findByIdAndIsDeletedFalse(2L);
-			verify(teamMemberRepo).findByUserIdAndIsDeletedFalse(2L);
-			verify(authRepo).existsByUserIdAndIsDeletedFalse(2L);
+			verify(userRepo).findById(2L);
+			verify(teamMemberRepo).findByUserId(2L);
+			verify(authRepo).existsByUserId(2L);
 		}
 
 		@Test
 		@DisplayName("실패 - 유저 없음")
 		public void fail_userNotFound() {
 			//given
-			given(userRepo.findByIdAndIsDeletedFalse(99L)).willReturn(Optional.empty());
+			given(userRepo.findById(99L)).willReturn(Optional.empty());
 
 			//when
 			//then
@@ -114,7 +114,7 @@ class UserServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 			// 메서드가 호출되지 않아야 함
-			verify(authRepo, never()).existsByUserIdAndIsDeletedFalse(anyLong());
+			verify(authRepo, never()).existsByUserId(anyLong());
 		}
 	}
 
@@ -128,14 +128,14 @@ class UserServiceTest {
 			Long userId = 1L;
 			User user = new User();
 			User spyUser = spy(user);
-			given(userRepo.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(spyUser));
+			given(userRepo.findById(userId)).willReturn(Optional.of(spyUser));
 			UserUpdateReq req = new UserUpdateReq("새닉네임", Position.CM, "010-9999-8888");
 
 			//when
 			userService.updateUser(userId, req);
 
 			//then
-			verify(userRepo).findByIdAndIsDeletedFalse(userId);
+			verify(userRepo).findById(userId);
 			verify(spyUser).update(req);
 			verifyNoMoreInteractions(userRepo);
 		}
@@ -145,7 +145,7 @@ class UserServiceTest {
 		public void fail_userNotFound() {
 			//given
 			Long userId = 99L;
-			given(userRepo.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+			given(userRepo.findById(userId)).willReturn(Optional.empty());
 			UserUpdateReq req = new UserUpdateReq("새닉네임", Position.CM, "010-9999-8888");
 
 			//when
@@ -153,7 +153,7 @@ class UserServiceTest {
 			assertThatThrownBy(() -> userService.updateUser(userId, req))
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
-			verify(userRepo).findByIdAndIsDeletedFalse(userId);
+			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo);
 		}
 	}
@@ -167,14 +167,14 @@ class UserServiceTest {
 			//given
 			String nickname = "uniqueNickname     ";
 			String trimmedNickname = nickname.trim();
-			given(userRepo.existsByNicknameAndIsDeletedFalse(trimmedNickname)).willReturn(false);
+			given(userRepo.existsByNickname(trimmedNickname)).willReturn(false);
 
 			//when
 			boolean result = userService.existsByNickname(nickname);
 
 			//then
 			assertThat(result).isTrue();
-			verify(userRepo).existsByNicknameAndIsDeletedFalse(trimmedNickname);
+			verify(userRepo).existsByNickname(trimmedNickname);
 			verifyNoMoreInteractions(userRepo);
 		}
 
@@ -183,7 +183,7 @@ class UserServiceTest {
 		public void fail_existsNickname() {
 			//given
 			String nickname = "existingNickname";
-			given(userRepo.existsByNicknameAndIsDeletedFalse(nickname)).willReturn(true);
+			given(userRepo.existsByNickname(nickname)).willReturn(true);
 
 			//when
 			//then
@@ -191,7 +191,7 @@ class UserServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("이미 사용중인 닉네임입니다.");
 
-			verify(userRepo).existsByNicknameAndIsDeletedFalse(argThat(s -> s.equals(s.trim())));
+			verify(userRepo).existsByNickname(argThat(s -> s.equals(s.trim())));
 			verifyNoMoreInteractions(userRepo);
 		}
 
@@ -225,7 +225,7 @@ class UserServiceTest {
 
 			PasswordUpdateReq req = new PasswordUpdateReq("currentPassword", "1111111111");
 
-			given(userRepo.findByIdAndIsDeletedFalse(user.getId())).willReturn(Optional.of(spyUser));
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(spyUser));
 			given(encoder.matches("currentPassword", "123456789")).willReturn(true);
 			given(encoder.encode("1111111111")).willReturn("encodedNewPassword");
 
@@ -233,7 +233,7 @@ class UserServiceTest {
 			userService.updatePassword(user.getId(), req);
 
 			//then
-			verify(userRepo).findByIdAndIsDeletedFalse(user.getId());
+			verify(userRepo).findById(user.getId());
 			verify(spyUser).getPassword();
 			verify(encoder).matches("currentPassword", "123456789");
 			verify(encoder).encode("1111111111");
@@ -267,14 +267,14 @@ class UserServiceTest {
 				.build();
 			PasswordUpdateReq req = new PasswordUpdateReq("wrongCur", "newTooLongPassword");
 			given(encoder.matches("wrongCur", "existingPassword")).willReturn(false);
-			given(userRepo.findByIdAndIsDeletedFalse(user.getId())).willReturn(Optional.of(user));
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(user));
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(user.getId(), req))
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("현재 비밀번호가 일치하지 않습니다.");
-			verify(userRepo).findByIdAndIsDeletedFalse(user.getId());
+			verify(userRepo).findById(user.getId());
 			verify(encoder).matches("wrongCur", "existingPassword");
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
@@ -285,14 +285,14 @@ class UserServiceTest {
 			//given
 			Long userId = 99L;
 			PasswordUpdateReq req = new PasswordUpdateReq("anyCur", "newValidPassword");
-			given(userRepo.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+			given(userRepo.findById(userId)).willReturn(Optional.empty());
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(userId, req))
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
-			verify(userRepo).findByIdAndIsDeletedFalse(userId);
+			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
 	}
@@ -307,24 +307,22 @@ class UserServiceTest {
 			User user = new User();
 			User spyUser = spy(user);
 			Long userId = 1L;
-			given(userRepo.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(spyUser));
+			given(userRepo.findById(userId)).willReturn(Optional.of(spyUser));
 
 			//when
 			userService.deleteUser(userId);
 
 			//then
-			verify(userRepo).findByIdAndIsDeletedFalse(userId);
-			verify(spyUser).softDelete();
-			assertThat(spyUser.isDeleted()).isTrue();
+			verify(userRepo).findById(userId);
+			verify(userRepo).delete(spyUser);
 			verifyNoMoreInteractions(userRepo);
-		}
-
+			}
 		@Test
 		@DisplayName("실패 - 유저 없음")
 		public void fail_userNotFound() {
 			//given
 			Long userId = 99L;
-			given(userRepo.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+			given(userRepo.findById(userId)).willReturn(Optional.empty());
 
 			//when
 			//then
@@ -332,7 +330,7 @@ class UserServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 
-			verify(userRepo).findByIdAndIsDeletedFalse(userId);
+			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo);
 		}
 	}

@@ -42,7 +42,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             try {
                 Long userId = jwtProvider.parseUserId(token);
-                Optional<User> user = userRepo.findByIdAndIsDeletedFalse(userId);
+                Optional<User> user = userRepo.findById(userId);
                 if (user.isEmpty()) {
                     throw new BusinessException(ErrorCode.USER_NOT_FOUND);
                 }

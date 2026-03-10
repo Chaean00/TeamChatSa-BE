@@ -33,13 +33,13 @@ public class OAuthService {
 	@Transactional
 	@Loggable
 	public TokenRes loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
-		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserIdAndIsDeletedFalse(OAuthProvider.KAKAO, kakaoId);
+		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserId(OAuthProvider.KAKAO, kakaoId);
 		User user;
 
 		if (existing.isPresent()) {
 			OAuthAccount account = existing.get();
-			Optional<User> userOpt = userRepo.findByIdAndIsDeletedFalse(account.getUserId());
-			if (userOpt.isEmpty()) {
+			Optional<User> userOpt = userRepo.findById(account.getUserId());
+			if (userOpt.isEmpty() || userOpt.get().isDeleted()) {
 				throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 			}
 			user = userOpt.get();
