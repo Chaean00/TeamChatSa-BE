@@ -56,8 +56,8 @@ class TeamServiceTest {
             // given
             Long userId = 1L;
             TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "하하");
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
-            given(teamRepo.existsByNameAndIsDeletedFalse(req.getName())).willReturn(false);
+            given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
+            given(teamRepo.existsByName(req.getName())).willReturn(false);
 
             // when
             teamService.registerTeam(userId, req);
@@ -73,7 +73,7 @@ class TeamServiceTest {
             // given
             Long userId = 1L;
             TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중하");
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(true);
+            given(teamMemberRepo.existsByUserId(userId)).willReturn(true);
 
             // when
             // then
@@ -88,8 +88,8 @@ class TeamServiceTest {
             // given
             Long userId = 1L;
             TeamCreateReq req = new TeamCreateReq("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중상");
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(userId)).willReturn(false);
-            given(teamRepo.existsByNameAndIsDeletedFalse(req.getName())).willReturn(true);
+            given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
+            given(teamRepo.existsByName(req.getName())).willReturn(true);
 
             // when
             // then
@@ -158,9 +158,9 @@ class TeamServiceTest {
                     .id(teamId)
                     .name("teamName")
                     .build();
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
-            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(com.chaean.teamchatsa.domain.team.model.TeamMember.builder()
                             .teamId(teamId)
                             .userId(userId)
@@ -185,9 +185,9 @@ class TeamServiceTest {
                     .id(teamId)
                     .name("teamName")
                     .build();
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
-            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.empty());
 
             // when
@@ -204,7 +204,7 @@ class TeamServiceTest {
             // given
             Long teamId = 1L;
             Long userId = 1L;
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+            given(teamRepo.findById(teamId)).willReturn(Optional.empty());
 
             // when
             // then
@@ -227,7 +227,7 @@ class TeamServiceTest {
             TeamJoinReq req = new TeamJoinReq("message");
 
             given(teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId)).willReturn(false);
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
+            given(teamRepo.existsById(teamId)).willReturn(true);
 
             // when
             teamService.applyToTeam(teamId, userId, req);
@@ -258,7 +258,7 @@ class TeamServiceTest {
             Long userId = 1L;
             TeamJoinReq req = new TeamJoinReq("message");
             given(teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId)).willReturn(false);
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+            given(teamRepo.existsById(teamId)).willReturn(false);
 
             // when
             // then
@@ -287,14 +287,15 @@ class TeamServiceTest {
                     .contact("contact")
                     .build();
 
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
-            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(1L);
+            given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
 
             // when
             teamService.deleteTeam(teamId);
 
             // then
-            assertThat(team.isDeleted()).isTrue();
+            verify(teamRepo).delete(team);
+            verify(teamMemberRepo).delete(any(TeamMember.class));
         }
 
         @Test
@@ -302,7 +303,7 @@ class TeamServiceTest {
         void fail_team_not_found() {
             // given
             Long teamId = 1L;
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+            given(teamRepo.findById(teamId)).willReturn(Optional.empty());
 
             // when
             // then
@@ -326,8 +327,8 @@ class TeamServiceTest {
                     .contact("contact")
                     .build();
 
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.of(team));
-            given(teamMemberRepo.countByTeamIdAndIsDeletedFalse(teamId)).willReturn(3L); // 리더 포함 3명
+            given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
+            given(teamMemberRepo.countByTeamId(teamId)).willReturn(3L); // 리더 포함 3명
 
             // when
             // then
@@ -341,7 +342,7 @@ class TeamServiceTest {
         void fail_already_deleted() {
             // given
             Long teamId = 1L;
-            given(teamRepo.findByIdAndIsDeletedFalse(teamId)).willReturn(Optional.empty());
+            given(teamRepo.findById(teamId)).willReturn(Optional.empty());
 
             // when
             // then
@@ -367,8 +368,8 @@ class TeamServiceTest {
                     .build();
             List<TeamApplicationRes> expected = Collections.emptyList();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING))
                     .willReturn(expected);
@@ -378,8 +379,8 @@ class TeamServiceTest {
 
             // then
             assertThat(result).isEqualTo(expected);
-            verify(teamRepo).existsByIdAndIsDeletedFalse(teamId);
-            verify(teamMemberRepo).findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId);
+            verify(teamRepo).existsById(teamId);
+            verify(teamMemberRepo).findByTeamIdAndUserId(teamId, userId);
             verify(teamJoinRequestRepo).findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING);
         }
 
@@ -396,8 +397,8 @@ class TeamServiceTest {
                     .build();
             List<TeamApplicationRes> expected = Collections.emptyList();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING))
                     .willReturn(expected);
@@ -415,7 +416,7 @@ class TeamServiceTest {
             // given
             Long teamId = 1L;
             Long userId = 1L;
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+            given(teamRepo.existsById(teamId)).willReturn(false);
 
             // when
             // then
@@ -430,8 +431,8 @@ class TeamServiceTest {
             // given
             Long teamId = 1L;
             Long userId = 1L;
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.empty());
 
             // when
@@ -453,8 +454,8 @@ class TeamServiceTest {
                     .role(TeamRole.MEMBER)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
 
             // when
@@ -491,12 +492,12 @@ class TeamServiceTest {
                     .message("가입 신청합니다")
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(application));
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(false);
+            given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(false);
             given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
                     .willReturn(List.of());
 
@@ -547,12 +548,12 @@ class TeamServiceTest {
                     .status(JoinStatus.PENDING)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(acceptedApplication));
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(false);
+            given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(false);
             given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
                     .willReturn(List.of(otherApplication1, otherApplication2));
 
@@ -574,7 +575,7 @@ class TeamServiceTest {
             Long teamId = 1L;
             Long applicationId = 100L;
             Long userId = 1L;
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+            given(teamRepo.existsById(teamId)).willReturn(false);
 
             // when
             // then
@@ -597,8 +598,8 @@ class TeamServiceTest {
                     .role(TeamRole.MEMBER)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
 
             // when
@@ -622,8 +623,8 @@ class TeamServiceTest {
                     .role(TeamRole.LEADER)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.empty());
@@ -656,8 +657,8 @@ class TeamServiceTest {
                     .status(JoinStatus.ACCEPTED)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(application));
@@ -691,12 +692,12 @@ class TeamServiceTest {
                     .status(JoinStatus.PENDING)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(application));
-            given(teamMemberRepo.existsByUserIdAndIsDeletedFalse(applicantUserId)).willReturn(true);
+            given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(true);
 
             // when
             // then
@@ -731,8 +732,8 @@ class TeamServiceTest {
                     .message("가입 신청합니다")
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(application));
@@ -751,7 +752,7 @@ class TeamServiceTest {
             Long teamId = 1L;
             Long applicationId = 100L;
             Long userId = 1L;
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(false);
+            given(teamRepo.existsById(teamId)).willReturn(false);
 
             // when
             // then
@@ -774,8 +775,8 @@ class TeamServiceTest {
                     .role(TeamRole.MEMBER)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
 
             // when
@@ -806,8 +807,8 @@ class TeamServiceTest {
                     .status(JoinStatus.REJECTED)
                     .build();
 
-            given(teamRepo.existsByIdAndIsDeletedFalse(teamId)).willReturn(true);
-            given(teamMemberRepo.findByTeamIdAndUserIdAndIsDeletedFalse(teamId, userId))
+            given(teamRepo.existsById(teamId)).willReturn(true);
+            given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
                     .willReturn(Optional.of(teamMember));
             given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
                     .willReturn(Optional.of(application));

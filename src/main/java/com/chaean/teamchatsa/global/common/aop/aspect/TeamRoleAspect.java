@@ -35,7 +35,7 @@ public class TeamRoleAspect {
 
 		// userId 기준으로 팀 멤버 조회 (전제: 한 유저는 하나의 팀만 가진다)
 		TeamMember teamMember = teamMemberRepository
-				.findByUserIdAndIsDeletedFalse(userId)
+				.findByUserId(userId)
 				.orElseThrow(() -> {
 					log.warn("[권한 검증 실패] 팀에 소속되지 않은 사용자입니다. userId: {}", userId);
 					return new BusinessException(ErrorCode.NOT_TEAM_MEMBER, "팀에 소속되지 않은 사용자입니다.");

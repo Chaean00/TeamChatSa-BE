@@ -64,12 +64,25 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "매치 날짜는 현재 시각 이후여야 합니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "사용자가 속한 팀이 없습니다.");
 		}
 
-		MatchPost matchPost = req.toEntity(teamId);
+		Team team = teamRepo.findById(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
+
+		MatchPost matchPost = MatchPost.of(
+				team,
+				req.getTitle(),
+				req.getContent(),
+				req.getHeadCount(),
+				req.getMatchDate(),
+				req.getLat(),
+				req.getLng(),
+				req.getAddress(),
+				req.getPlaceName()
+		);
 		matchPostRepo.save(matchPost);
 
 		// 매치 목록 캐시 무효화
@@ -80,10 +93,10 @@ public class MatchService {
 	@Transactional
 	@Loggable
 	public void deleteMatchPost(Long userId, Long matchId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null || !matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 게시물을 삭제할 권한이 없습니다.");
 		}
@@ -93,7 +106,7 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_STATE, "신청이 있는 매치는 삭제할 수 없습니다.");
 		}
 
-		matchPost.softDelete();
+		matchPostRepo.delete(matchPost);
 
 		// 매치 목록 캐시 무효화
 		deleteMatchPostsCache();
@@ -151,7 +164,7 @@ public class MatchService {
 	@Transactional(readOnly = true)
 	@Loggable
 	public SliceResponse<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
-		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
+		if (!teamRepo.existsById(teamId)) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
 		}
 
@@ -176,14 +189,14 @@ public class MatchService {
 	@Transactional
 	@Loggable
 	public void registerMatchApplication(Long userId, Long matchId, MatchApplicationReq req) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
 		if (matchPost.getStatus() != MatchPostStatus.OPEN) {
 			throw new BusinessException(ErrorCode.INVALID_STATE, "마감된 매치입니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND, "사용자가 속한 팀이 없습니다.");
 		}
@@ -198,14 +211,10 @@ public class MatchService {
 		}
 
 		// 신청 팀 정보 조회
-		Team applicantTeam = teamRepo.findByIdAndIsDeletedFalse(teamId)
+		Team applicantTeam = teamRepo.findById(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "팀을 찾을 수 없습니다."));
 
-		MatchApplication matchApplication = MatchApplication.builder()
-				.postId(matchPost.getId())
-				.applicantTeamId(teamId)
-				.message(req.getMessage())
-				.build();
+		MatchApplication matchApplication = MatchApplication.of(matchPost.getId(), teamId, req.getMessage());
 
 		try {
 			matchApplicationRepo.save(matchApplication);
@@ -230,11 +239,11 @@ public class MatchService {
 	@Transactional
 	@Loggable
 	public void deleteMatchApplication(Long userId, Long matchId) {
-		if (!matchPostRepo.existsByIdAndIsDeletedFalse(matchId)) {
+		if (!matchPostRepo.existsById(matchId)) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND, "사용자가 속한 팀이 없습니다.");
 		}
@@ -255,7 +264,7 @@ public class MatchService {
 	@Transactional
 	@Loggable
 	public String acceptMatchApplication(Long matchId, Long applicantId, Long userId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
 		if (matchPost.getMatchDate().isBefore(LocalDateTime.now())) {
@@ -266,7 +275,7 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 마감된 게시물입니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (!matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "해당 매치의 팀 멤버가 아닙니다.");
 		}
@@ -291,7 +300,7 @@ public class MatchService {
 			}
 		});
 
-		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
+		Team team = teamRepo.findById(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
 		// 매치 신청 승인 이벤트 발행
@@ -315,10 +324,10 @@ public class MatchService {
 	@Transactional
 	@Loggable
 	public String rejectMatchApplication(Long matchId, Long applicantId, Long userId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (!matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "권한이 없습니다.");
 		}
@@ -328,7 +337,7 @@ public class MatchService {
 
 		matchApplication.updateStatus(MatchApplicationStatus.REJECTED);
 
-		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
+		Team team = teamRepo.findById(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
 		// 매치 신청 거절 이벤트 발행
@@ -348,10 +357,10 @@ public class MatchService {
 	@Transactional(readOnly = true)
 	@Loggable
 	public List<MatchApplicantRes> getMatchApplicants(Long userId, Long matchId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null || !matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 신청 목록을 조회할 권한이 없습니다.");
 		}

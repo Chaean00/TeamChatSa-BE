@@ -32,12 +32,12 @@ public class UserService {
 	@Transactional(readOnly = true)
 	@Loggable
 	public UserRes findUser(Long userId) {
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
-		TeamMember teamMember = teamMemberRepo.findByUserIdAndIsDeletedFalse(userId).orElse(null);
+		TeamMember teamMember = teamMemberRepo.findByUserId(userId).orElse(null);
 
-		boolean isLinked = authRepo.existsByUserIdAndIsDeletedFalse(user.getId());
+		boolean isLinked = authRepo.existsByUserId(user.getId());
 
 		return UserRes.builder()
 				.id(user.getId())
@@ -55,7 +55,7 @@ public class UserService {
 	@Transactional
 	@Loggable
 	public void updateUser(Long userId, UserUpdateReq req) {
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
 		user.update(req);
@@ -65,7 +65,7 @@ public class UserService {
 	@Loggable
 	public boolean existsByNickname(String nickname) {
 		Objects.requireNonNull(nickname);
-		boolean exists = userRepo.existsByNicknameAndIsDeletedFalse(nickname.trim());
+		boolean exists = userRepo.existsByNickname(nickname.trim());
 
 		if (exists) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 사용중인 닉네임입니다.");
@@ -80,7 +80,7 @@ public class UserService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 		}
 
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
 		if (!encoder.matches(req.getCurrentPassword(), user.getPassword())) {
@@ -93,9 +93,9 @@ public class UserService {
 	@Transactional
 	@Loggable
 	public void deleteUser(Long userId) {
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
-		user.softDelete();
+		userRepo.delete(user);
 	}
 }
