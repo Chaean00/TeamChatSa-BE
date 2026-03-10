@@ -48,9 +48,7 @@ public class TeamRepositoryImpl implements TeamRepositoryCustom {
 				.from(t)
 				.leftJoin(tm).on(
 						tm.teamId.eq(t.id)
-							.and(tm.isDeleted.eq(false))
 				)
-				.where(t.isDeleted.eq(false))
 				.groupBy(t.id, t.name, t.area, t.img, t.description, t.createdAt)
 				.orderBy(t.createdAt.desc(), t.id.desc())
 				.offset(pageable.getOffset())
@@ -89,10 +87,8 @@ public class TeamRepositoryImpl implements TeamRepositoryCustom {
 				.from(t)
 				.leftJoin(tm).on(
 						tm.teamId.eq(t.id)
-								.and(tm.isDeleted.eq(false))
 				)
 				.where(
-						t.isDeleted.eq(false),
 						nameMatch
 				)
 				.groupBy(t.id, t.name, t.area, t.img, t.description, t.createdAt)

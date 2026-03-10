@@ -11,31 +11,28 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TeamMemberRepository extends JpaRepository<TeamMember, Long>, TeamMemberRepositoryCustom {
-    boolean existsByUserIdAndIsDeletedFalse(Long userId);
+    boolean existsByUserId(Long userId);
 
-    Long countByTeamIdAndIsDeletedFalse(Long teamId);
+    Long countByTeamId(Long teamId);
 
-    Optional<TeamMember> findByTeamIdAndUserIdAndIsDeletedFalse(Long teamId, Long userId);
+    Optional<TeamMember> findByTeamIdAndUserId(Long teamId, Long userId);
 
-    Optional<TeamMember> findByUserIdAndIsDeletedFalse(Long userId);
+    Optional<TeamMember> findByUserId(Long userId);
 
-    List<TeamMember> findByTeamIdAndIsDeletedFalse(Long teamId);
+    List<TeamMember> findByTeamId(Long teamId);
 
     @Query("""
         SELECT tm.teamId
           FROM TeamMember tm
          WHERE tm.userId = :userId
-           AND tm.isDeleted = false
     """)
-    Long findTeamIdByUserIdAndIsDeletedFalse(Long userId);
+    Long findTeamIdByUserId(Long userId);
 
-    /** 특정 팀의 특정 역할을 가진 멤버 목록 조회 */
     @Query("""
         SELECT tm
           FROM TeamMember tm
          WHERE tm.teamId = :teamId
            AND tm.role IN :roles
-           AND tm.isDeleted = false
     """)
-    List<TeamMember> findByTeamIdAndRoleInAndIsDeletedFalse(@Param("teamId") Long teamId, @Param("roles") List<TeamRole> roles);
+    List<TeamMember> findByTeamIdAndRoleIn(@Param("teamId") Long teamId, @Param("roles") List<TeamRole> roles);
 }

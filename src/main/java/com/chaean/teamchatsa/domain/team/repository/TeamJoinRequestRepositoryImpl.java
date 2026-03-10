@@ -40,7 +40,7 @@ public class TeamJoinRequestRepositoryImpl implements TeamJoinRequestRepositoryC
 						ta.createdAt
 				))
 				.from(ta)
-				.join(u).on(ta.userId.eq(u.id).and(u.isDeleted.eq(false)))
+				.join(u).on(ta.userId.eq(u.id))
 				.where(ta.teamId.eq(teamId))
 				.orderBy(ta.createdAt.desc())
 				.fetch();
@@ -63,7 +63,7 @@ public class TeamJoinRequestRepositoryImpl implements TeamJoinRequestRepositoryC
 						ta.createdAt
 				))
 				.from(ta)
-				.join(u).on(ta.userId.eq(u.id).and(u.isDeleted.eq(false)))
+				.join(u).on(ta.userId.eq(u.id))
 				.where(
 						ta.teamId.eq(teamId)
 								.and(ta.status.eq(status))

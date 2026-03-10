@@ -8,19 +8,14 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long>, TeamRepositoryCustom {
 
-    Optional<Team> findByIdAndIsDeletedFalse(Long teamId);
-
-    boolean existsByIdAndIsDeletedFalse(Long teamId);
-
-    boolean existsByLeaderUserIdAndIsDeletedFalse(Long userId);
+    boolean existsByLeaderUserId(Long userId);
 
     @Query("""
     SELECT EXISTS (
         SELECT 1
           FROM Team t
          WHERE t.name = :teamName
-           AND t.isDeleted = false
     )
     """)
-    boolean existsByNameAndIsDeletedFalse(String teamName);
+    boolean existsByName(String teamName);
 }

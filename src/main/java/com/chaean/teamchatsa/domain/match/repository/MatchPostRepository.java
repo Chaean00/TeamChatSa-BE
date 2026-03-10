@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, MatchPostRepositoryCustom {
-	Optional<MatchPost> findByIdAndIsDeletedFalse(Long matchId);
-	boolean existsByIdAndIsDeletedFalse(Long matchId);
 
 	/**
 	 * 지도 기반 매치 검색

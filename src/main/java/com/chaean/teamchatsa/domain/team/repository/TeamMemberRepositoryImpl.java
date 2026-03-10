@@ -45,8 +45,7 @@ public class TeamMemberRepositoryImpl implements TeamMemberRepositoryCustom {
 						tm.userId.eq(u.id)
 				)
 				.where(
-						tm.teamId.eq(teamId),
-						tm.isDeleted.eq(false)
+						tm.teamId.eq(teamId)
 				)
 				.orderBy(
 						roleOrder.asc(),

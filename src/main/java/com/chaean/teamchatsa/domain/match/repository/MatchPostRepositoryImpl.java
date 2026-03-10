@@ -57,9 +57,8 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						mp.headCount
 				))
 				.from(mp)
-				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
+				.leftJoin(t).on(t.id.eq(mp.teamId))
 				.where(
-						mp.isDeleted.isFalse(),
 						mp.status.eq(MatchPostStatus.OPEN),
 						mp.matchDate.goe(LocalDateTime.now()),
 						filterCondition
@@ -112,10 +111,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						mp.headCount
 				))
 				.from(mp)
-				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
+				.leftJoin(t).on(t.id.eq(mp.teamId))
 				.where(
 						mp.teamId.eq(teamId)
-								.and(mp.isDeleted.eq(false))
 				)
 				.orderBy(mp.createdAt.desc(), mp.id.desc())
 				.offset(pageable.getOffset())
@@ -150,10 +148,8 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 				.from(mp)
 				.leftJoin(t).on(
 						t.id.eq(mp.teamId)
-								.and(t.isDeleted.eq(false))
 				)
-				.where(mp.id.eq(matchId)
-						.and(mp.isDeleted.eq(false)))
+				.where(mp.id.eq(matchId))
 				.fetchOne();
 
 		return content;

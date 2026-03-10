@@ -40,7 +40,7 @@ public class MatchApplicationRepositoryImpl implements MatchApplicationRepositor
 						ma.status
 				))
 				.from(ma)
-				.join(t).on(ma.applicantTeamId.eq(t.id).and(t.isDeleted.eq(false)))
+				.join(t).on(ma.applicantTeamId.eq(t.id))
 				.where(ma.postId.eq(matchId))
 				.orderBy(ma.createdAt.desc())
 				.fetch();
