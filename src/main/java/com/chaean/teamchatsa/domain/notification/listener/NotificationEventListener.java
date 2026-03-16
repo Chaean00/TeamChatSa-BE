@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -34,8 +35,9 @@ public class NotificationEventListener {
 	/**
 	 * 팀 가입 신청 이벤트 처리 수신 대상: 팀장 및 부팀장에게 팀 가입 신청 알림 발송
 	 */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Async
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional
 	public void handleTeamApplicationCreated(TeamApplicationCreatedEvent event) {
 		log.info("팀 가입 신청 이벤트 처리: teamId={}, applicantId={}",
 				event.getTeamId(), event.getApplicantUserId());
@@ -65,8 +67,9 @@ public class NotificationEventListener {
 	/**
 	 * 팀 가입 신청 처리 이벤트 (수락/거절) 신청자에게 가입 신청 수락/거절 알림 발송
 	 */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Async
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional
 	public void handleTeamApplicationProcessed(TeamApplicationProcessedEvent event) {
 		log.info("팀 가입 처리 이벤트: applicantId={}, status={}",
 				event.getApplicantUserId(), event.getStatus());
@@ -90,8 +93,9 @@ public class NotificationEventListener {
 	/**
 	 * 매치 신청 이벤트 처리 매치 게시물 작성 팀의 팀장/부팀장에게 매치 신청 알림 발송
 	 */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Async
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional
 	public void handleMatchApplicationCreated(MatchApplicationCreatedEvent event) {
 		log.info("매치 신청 이벤트 처리: matchId={}, applicantTeamId={}",
 				event.getMatchId(), event.getApplicantTeamId());
@@ -121,8 +125,9 @@ public class NotificationEventListener {
 	/**
 	 * 매치 신청 처리 이벤트 (수락/거절) 신청 팀의 팀장/부팀장에게 수락/거절 알림 발송
 	 */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Async
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional
 	public void handleMatchApplicationProcessed(MatchApplicationProcessedEvent event) {
 		log.info("매치 처리 이벤트: applicantTeamId={}, status={}",
 				event.getApplicantTeamId(), event.getStatus());
@@ -146,7 +151,7 @@ public class NotificationEventListener {
 				.map(TeamMember::getUserId)
 				.collect(Collectors.toList());
 
-		// 배치로 한 번에 알림 생성 (N+1 해결)
+		// 배치로 한 번에 알림 생성
 		notificationService.createNotifications(
 				leaderUserIds,
 				type,
