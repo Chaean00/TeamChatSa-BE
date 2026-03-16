@@ -1,14 +1,13 @@
 package com.chaean.teamchatsa.infra.slack;
 
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Getter
 @Builder
@@ -18,31 +17,6 @@ public class SlackMessage {
 
 	private String text;
 	private List<Attachment> attachments;
-
-	@Getter
-	@Builder
-	@NoArgsConstructor
-	@AllArgsConstructor
-	public static class Attachment {
-		private String color;
-		private String pretext;
-		private String title;
-		private String text;
-		private List<Field> fields;
-		private String footer;
-		private Long ts;
-	}
-
-	@Getter
-	@Builder
-	@NoArgsConstructor
-	@AllArgsConstructor
-	public static class Field {
-		private String title;
-		private String value;
-		@Builder.Default
-		private Boolean shortField = false;
-	}
 
 	/** 에러 알림 메시지 생성 */
 	public static SlackMessage createErrorAlert(
@@ -141,5 +115,32 @@ public class SlackMessage {
 			return text;
 		}
 		return text.substring(0, maxLength) + "... (truncated)";
+	}
+
+	@Getter
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class Attachment {
+
+		private String color;
+		private String pretext;
+		private String title;
+		private String text;
+		private List<Field> fields;
+		private String footer;
+		private Long ts;
+	}
+
+	@Getter
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class Field {
+
+		private String title;
+		private String value;
+		@Builder.Default
+		private Boolean shortField = false;
 	}
 }

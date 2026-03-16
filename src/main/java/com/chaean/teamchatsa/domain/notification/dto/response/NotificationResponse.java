@@ -2,18 +2,17 @@ package com.chaean.teamchatsa.domain.notification.dto.response;
 
 import com.chaean.teamchatsa.domain.notification.model.Notification;
 import com.chaean.teamchatsa.domain.notification.model.NotificationType;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationRes {
+public class NotificationResponse {
 
 	private Long id;
 	private NotificationType type;
@@ -23,8 +22,8 @@ public class NotificationRes {
 	private Boolean isRead;
 	private LocalDateTime createdAt;
 
-	public static NotificationRes fromEntity(Notification notification) {
-		return NotificationRes.builder()
+	public static NotificationResponse fromEntity(Notification notification) {
+		return NotificationResponse.builder()
 				.id(notification.getId())
 				.type(notification.getType())
 				.title(notification.getTitle())

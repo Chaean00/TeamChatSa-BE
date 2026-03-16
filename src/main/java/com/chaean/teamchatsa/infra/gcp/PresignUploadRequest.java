@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PresignUploadReq {
+public class PresignUploadRequest {
+
 	private String fileName;
 	private String contentType;
 }

@@ -9,17 +9,24 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamCreateReq {
+public class TeamCreateRequest {
+
 	@NotNull
 	private String name;
+
 	@NotNull
 	private String area;
+
 	private String description;
+
 	@NotNull
 	private ContactType contactType;
+
 	@NotNull
 	private String contact;
+
 	private String imgUrl;
+
 	@NotNull
 	private String level;
 }

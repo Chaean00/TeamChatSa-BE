@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserRes {
+public class UserResponse {
+
 	private Long id;
 	private String email;
 	private String name;

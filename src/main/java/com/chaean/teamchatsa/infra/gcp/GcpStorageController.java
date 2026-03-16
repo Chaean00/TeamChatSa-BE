@@ -21,11 +21,11 @@ public class GcpStorageController {
 
 	@Operation(summary = "업로드용 Signed URL 발급", description = "파일 업로드를 위한 GCP Signed URL을 반환합니다.")
 	@PostMapping("/presign-upload")
-	public ResponseEntity<ApiResponse<PresignUploadRes>> presignUpload(
-		@RequestBody PresignUploadReq req,
-		@AuthenticationPrincipal Long userId
+	public ResponseEntity<ApiResponse<PresignUploadResponse>> presignUpload(
+			@RequestBody PresignUploadRequest req,
+			@AuthenticationPrincipal Long userId
 	) {
-		PresignUploadRes res = storageService.presignUpload(req, userId);
+		PresignUploadResponse res = storageService.presignUpload(req, userId);
 		return ResponseEntity.ok(ApiResponse.success(res));
 	}
 }

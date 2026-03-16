@@ -1,21 +1,18 @@
 package com.chaean.teamchatsa.domain.team.repository;
 
-import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationRes;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationResponse;
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
 import com.chaean.teamchatsa.domain.team.model.QTeamApplication;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
 import com.chaean.teamchatsa.domain.user.model.QUser;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 /**
- * TeamJoinRequest QueryDSL 구현체
- * - 네이밍: TeamJoinRequestRepositoryImpl (Spring이 자동 인식)
- * - @Repository 필수
+ * TeamJoinRequest QueryDSL 구현체 - 네이밍: TeamJoinRequestRepositoryImpl (Spring이 자동 인식) - @Repository 필수
  */
 @Repository
 @RequiredArgsConstructor
@@ -24,13 +21,13 @@ public class TeamJoinRequestRepositoryImpl implements TeamJoinRequestRepositoryC
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public List<TeamApplicationRes> findApplicationsByTeamId(Long teamId) {
+	public List<TeamApplicationResponse> findApplicationsByTeamId(Long teamId) {
 		QTeamApplication ta = QTeamApplication.teamApplication;
 		QUser u = QUser.user;
 
 		return queryFactory
 				.select(Projections.constructor(
-						TeamApplicationRes.class,
+						TeamApplicationResponse.class,
 						ta.id,
 						u.id,
 						u.username,
@@ -47,13 +44,13 @@ public class TeamJoinRequestRepositoryImpl implements TeamJoinRequestRepositoryC
 	}
 
 	@Override
-	public List<TeamApplicationRes> findApplicationsByTeamIdAndStatus(Long teamId, JoinStatus status) {
+	public List<TeamApplicationResponse> findApplicationsByTeamIdAndStatus(Long teamId, JoinStatus status) {
 		QTeamApplication ta = QTeamApplication.teamApplication;
 		QUser u = QUser.user;
 
 		return queryFactory
 				.select(Projections.constructor(
-						TeamApplicationRes.class,
+						TeamApplicationResponse.class,
 						ta.id,
 						u.id,
 						u.username,

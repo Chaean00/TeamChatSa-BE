@@ -1,12 +1,22 @@
 package com.chaean.teamchatsa.domain.user.service;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import com.chaean.teamchatsa.domain.team.model.Position;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
-import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateReq;
-import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
-import com.chaean.teamchatsa.domain.user.dto.response.UserRes;
+import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateRequest;
+import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateRequest;
+import com.chaean.teamchatsa.domain.user.dto.response.UserResponse;
 import com.chaean.teamchatsa.domain.user.model.OAuthAccount;
 import com.chaean.teamchatsa.domain.user.model.OAuthProvider;
 import com.chaean.teamchatsa.domain.user.model.User;
@@ -14,6 +24,8 @@ import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.exception.BusinessException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,14 +34,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -48,6 +52,7 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("유저 정보 조회")
 	class FindUser {
+
 		@Test
 		@DisplayName("성공 - 로컬 계정")
 		public void success_localAccount() {
@@ -58,7 +63,7 @@ class UserServiceTest {
 			given(authRepo.existsByUserId(1L)).willReturn(false);
 
 			//when
-			UserRes result = userService.findUser(1L);
+			UserResponse result = userService.findUser(1L);
 
 			//then
 			assertThat(result.getId()).isEqualTo(1L);
@@ -82,13 +87,14 @@ class UserServiceTest {
 					.userId(2L)
 					.role(TeamRole.MEMBER)
 					.build();
-			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null, OAuthProvider.KAKAO);
+			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null,
+					OAuthProvider.KAKAO);
 			given(userRepo.findById(2L)).willReturn(Optional.of(user));
 			given(teamMemberRepo.findByUserId(2L)).willReturn(Optional.of(teamMember));
 			given(authRepo.existsByUserId(2L)).willReturn(true);
 
 			//when
-			UserRes result = userService.findUser(2L);
+			UserResponse result = userService.findUser(2L);
 
 			//then
 			assertThat(oAuthAccount.getUserId()).isEqualTo(result.getId());
@@ -111,8 +117,8 @@ class UserServiceTest {
 			//when
 			//then
 			assertThatThrownBy(() -> userService.findUser(99L))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 			// 메서드가 호출되지 않아야 함
 			verify(authRepo, never()).existsByUserId(anyLong());
 		}
@@ -121,6 +127,7 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("유저 정보 업데이트")
 	class UpdateUser {
+
 		@Test
 		@DisplayName("성공")
 		public void success() {
@@ -129,7 +136,7 @@ class UserServiceTest {
 			User user = new User();
 			User spyUser = spy(user);
 			given(userRepo.findById(userId)).willReturn(Optional.of(spyUser));
-			UserUpdateReq req = new UserUpdateReq("새닉네임", Position.CM, "010-9999-8888");
+			UserUpdateRequest req = new UserUpdateRequest("새닉네임", Position.CM, "010-9999-8888");
 
 			//when
 			userService.updateUser(userId, req);
@@ -146,13 +153,13 @@ class UserServiceTest {
 			//given
 			Long userId = 99L;
 			given(userRepo.findById(userId)).willReturn(Optional.empty());
-			UserUpdateReq req = new UserUpdateReq("새닉네임", Position.CM, "010-9999-8888");
+			UserUpdateRequest req = new UserUpdateRequest("새닉네임", Position.CM, "010-9999-8888");
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updateUser(userId, req))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo);
 		}
@@ -161,6 +168,7 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("닉네임 중복 확인")
 	class ExistsByNickname {
+
 		@Test
 		@DisplayName("성공")
 		public void success() {
@@ -188,8 +196,8 @@ class UserServiceTest {
 			//when
 			//then
 			assertThatThrownBy(() -> userService.existsByNickname(nickname))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("이미 사용중인 닉네임입니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("이미 사용중인 닉네임입니다.");
 
 			verify(userRepo).existsByNickname(argThat(s -> s.equals(s.trim())));
 			verifyNoMoreInteractions(userRepo);
@@ -204,7 +212,7 @@ class UserServiceTest {
 			//when
 			//then
 			assertThatThrownBy(() -> userService.existsByNickname(nickname))
-				.isInstanceOf(NullPointerException.class);
+					.isInstanceOf(NullPointerException.class);
 
 			verifyNoMoreInteractions(userRepo);
 		}
@@ -213,17 +221,18 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("유저 비밀번호 변경")
 	class UpdatePassword {
+
 		@Test
 		@DisplayName("성공")
 		public void success() {
 			//given
 			User user = User.builder()
-				.id(1L)
-				.password("123456789")
-				.build();
+					.id(1L)
+					.password("123456789")
+					.build();
 			User spyUser = spy(user);
 
-			PasswordUpdateReq req = new PasswordUpdateReq("currentPassword", "1111111111");
+			PasswordUpdateRequest req = new PasswordUpdateRequest("currentPassword", "1111111111");
 
 			given(userRepo.findById(user.getId())).willReturn(Optional.of(spyUser));
 			given(encoder.matches("currentPassword", "123456789")).willReturn(true);
@@ -246,13 +255,13 @@ class UserServiceTest {
 		public void fail_shortPassword() {
 			//given
 			Long userId = 1L;
-			PasswordUpdateReq req = new PasswordUpdateReq("curr", "short");
+			PasswordUpdateRequest req = new PasswordUpdateRequest("curr", "short");
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(userId, req))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("비밀번호는 8글자 이상이어야 합니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("비밀번호는 8글자 이상이어야 합니다.");
 
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
@@ -262,18 +271,18 @@ class UserServiceTest {
 		public void fail_notEqualPassword() {
 			//given
 			User user = User.builder()
-				.id(1L)
-				.password("existingPassword")
-				.build();
-			PasswordUpdateReq req = new PasswordUpdateReq("wrongCur", "newTooLongPassword");
+					.id(1L)
+					.password("existingPassword")
+					.build();
+			PasswordUpdateRequest req = new PasswordUpdateRequest("wrongCur", "newTooLongPassword");
 			given(encoder.matches("wrongCur", "existingPassword")).willReturn(false);
 			given(userRepo.findById(user.getId())).willReturn(Optional.of(user));
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(user.getId(), req))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("현재 비밀번호가 일치하지 않습니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("현재 비밀번호가 일치하지 않습니다.");
 			verify(userRepo).findById(user.getId());
 			verify(encoder).matches("wrongCur", "existingPassword");
 			verifyNoMoreInteractions(userRepo, encoder);
@@ -284,14 +293,14 @@ class UserServiceTest {
 		public void fail_userNotFound() {
 			//given
 			Long userId = 99L;
-			PasswordUpdateReq req = new PasswordUpdateReq("anyCur", "newValidPassword");
+			PasswordUpdateRequest req = new PasswordUpdateRequest("anyCur", "newValidPassword");
 			given(userRepo.findById(userId)).willReturn(Optional.empty());
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(userId, req))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
@@ -300,6 +309,7 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("유저 삭제")
 	class DeleteUser {
+
 		@Test
 		@DisplayName("성공")
 		public void success() {
@@ -316,7 +326,8 @@ class UserServiceTest {
 			verify(userRepo).findById(userId);
 			verify(userRepo).delete(spyUser);
 			verifyNoMoreInteractions(userRepo);
-			}
+		}
+
 		@Test
 		@DisplayName("실패 - 유저 없음")
 		public void fail_userNotFound() {
@@ -327,8 +338,8 @@ class UserServiceTest {
 			//when
 			//then
 			assertThatThrownBy(() -> userService.deleteUser(userId))
-				.isInstanceOf(BusinessException.class)
-				.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
+					.isInstanceOf(BusinessException.class)
+					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
 
 			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo);

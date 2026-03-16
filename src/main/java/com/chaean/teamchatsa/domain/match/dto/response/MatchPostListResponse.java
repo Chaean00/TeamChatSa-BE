@@ -1,20 +1,20 @@
 package com.chaean.teamchatsa.domain.match.dto.response;
 
 import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MatchPostListRes {
+public class MatchPostListResponse {
+
 	private Long postId;
 	private String matchTitle;
 	private String placeName;
@@ -26,15 +26,16 @@ public class MatchPostListRes {
 	private String teamLevel;
 	private int headCount;
 
-	public MatchPostListRes(Long postId,
-							String title,
-							String placeName,
-							LocalDateTime matchDateTime,
-							String teamName,
-							String address,
-							MatchPostStatus postStatus,
-							String level,
-							int headCount) {
+	public MatchPostListResponse(Long postId,
+			String title,
+			String placeName,
+			LocalDateTime matchDateTime,
+			String teamName,
+			String address,
+			MatchPostStatus postStatus,
+			String level,
+			int headCount
+	) {
 		this.postId = postId;
 		this.matchTitle = title;
 		this.placeName = placeName;

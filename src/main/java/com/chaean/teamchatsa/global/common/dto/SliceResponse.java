@@ -1,20 +1,21 @@
 package com.chaean.teamchatsa.global.common.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Slice;
 
-import java.util.List;
-
-/** 페이지 번호가 존재하지 않는 슬라이스 응답 DTO */
-
+/**
+ * 페이지 번호가 존재하지 않는 슬라이스 응답 DTO
+ */
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SliceResponse<T> {
+
 	private List<T> content;
 	private boolean last;
 

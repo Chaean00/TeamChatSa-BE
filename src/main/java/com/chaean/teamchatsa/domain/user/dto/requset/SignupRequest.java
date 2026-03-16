@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.user.dto.requset;
 
-import jakarta.validation.constraints.Email;
+import com.chaean.teamchatsa.domain.team.model.Position;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,19 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginReq {
-	@Email
+public class SignupRequest {
+
+	@NotNull
+	private String userName;
+
 	@NotNull
 	private String email;
+
 	@NotNull
 	private String password;
+
+	private String phone;
+
+	@NotNull
+	private Position position;
 }

@@ -8,8 +8,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserUpdateReq {
+public class UserUpdateRequest {
+
 	private String nickname;
+
 	private Position position;
+
 	private String phone;
 }

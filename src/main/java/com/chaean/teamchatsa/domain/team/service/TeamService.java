@@ -1,12 +1,18 @@
 package com.chaean.teamchatsa.domain.team.service;
 
-import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateReq;
-import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinReq;
-import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationRes;
-import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailRes;
-import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
-import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberRes;
-import com.chaean.teamchatsa.domain.team.model.*;
+import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateRequest;
+import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinRequest;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationResponse;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailResponse;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamListResponse;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberResponse;
+import com.chaean.teamchatsa.domain.team.event.TeamApplicationCreatedEvent;
+import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
+import com.chaean.teamchatsa.domain.team.model.JoinStatus;
+import com.chaean.teamchatsa.domain.team.model.Team;
+import com.chaean.teamchatsa.domain.team.model.TeamApplication;
+import com.chaean.teamchatsa.domain.team.model.TeamMember;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
@@ -14,23 +20,19 @@ import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
-import com.chaean.teamchatsa.domain.team.event.TeamApplicationCreatedEvent;
-import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
 import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -43,10 +45,12 @@ public class TeamService {
 	private final UserRepository userRepo;
 	private final ApplicationEventPublisher eventPublisher;
 
-	/** 팀 등록 */
+	/**
+	 * 팀 등록
+	 */
 	@Transactional
 	@Loggable
-	public void registerTeam(Long userId, TeamCreateReq req) {
+	public void registerTeam(Long userId, TeamCreateRequest req) {
 		// 이미 가입한 팀이 있는지 체크
 		if (teamMemberRepo.existsByUserId(userId)) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 가입한 팀이 존재합니다.");
@@ -74,10 +78,12 @@ public class TeamService {
 		teamMemberRepo.save(teamMember);
 	}
 
-	/** 팀 목록 조회 */
+	/**
+	 * 팀 목록 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<TeamListRes> findTeamList(int page, int size, String teamName) {
+	public SliceResponse<TeamListResponse> findTeamList(int page, int size, String teamName) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
 		if (teamName == null || teamName.isBlank()) {
@@ -94,10 +100,12 @@ public class TeamService {
 //		return SliceResponse.from(teamRepo.findTeamListByNameWithPagination(pageable, teamName));
 //	}
 
-	/** 팀 상세 조회 */
+	/**
+	 * 팀 상세 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public TeamDetailRes findTeamDetail(Long teamId, Long userId) {
+	public TeamDetailResponse findTeamDetail(Long teamId, Long userId) {
 		Team team = teamRepo.findById(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다."));
 
@@ -107,13 +115,15 @@ public class TeamService {
 				.orElse(null);
 		TeamRole userRole = teamMember != null ? teamMember.getRole() : null;
 
-		return TeamDetailRes.fromEntity(team, userRole, memberCount);
+		return TeamDetailResponse.fromEntity(team, userRole, memberCount);
 	}
 
-	/** 팀 가입 신청 */
+	/**
+	 * 팀 가입 신청
+	 */
 	@Transactional
 	@Loggable
-	public void applyToTeam(Long teamId, Long userId, TeamJoinReq req) {
+	public void applyToTeam(Long teamId, Long userId, TeamJoinRequest req) {
 		// 이미 가입한 팀이 있는지 체크
 		boolean alreadyMember = teamMemberRepo.existsByUserId(userId);
 		if (alreadyMember) {
@@ -154,7 +164,9 @@ public class TeamService {
 				teamId, userId, application.getId());
 	}
 
-	/** 팀 삭제 */
+	/**
+	 * 팀 삭제
+	 */
 	@Transactional
 	@Loggable
 	public void deleteTeam(Long teamId) {
@@ -174,10 +186,12 @@ public class TeamService {
 		}
 	}
 
-	/** 팀원 조회 */
+	/**
+	 * 팀원 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public List<TeamMemberRes> findTeamMembers(Long teamId) {
+	public List<TeamMemberResponse> findTeamMembers(Long teamId) {
 		// 존재하는 팀인지 체크
 		boolean existsTeam = teamRepo.existsById(teamId);
 		if (!existsTeam) {
@@ -187,7 +201,9 @@ public class TeamService {
 		return teamMemberRepo.findTeamMembersByTeamId(teamId);
 	}
 
-	/** 팀원 권한 변경 */
+	/**
+	 * 팀원 권한 변경
+	 */
 	@Transactional
 	public void changeMemberRole(Long teamId, Long userId, TeamRole newRole) {
 		TeamMember teamMember = teamMemberRepo.findByTeamIdAndUserId(teamId, userId)
@@ -200,10 +216,12 @@ public class TeamService {
 		teamMember.updateRole(newRole);
 	}
 
-	/** 팀 가입 신청 목록 조회 */
+	/**
+	 * 팀 가입 신청 목록 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public List<TeamApplicationRes> findTeamApplications(Long teamId, Long userId) {
+	public List<TeamApplicationResponse> findTeamApplications(Long teamId, Long userId) {
 		// 팀 존재 여부 확인
 		if (!teamRepo.existsById(teamId)) {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 팀입니다.");
@@ -221,7 +239,9 @@ public class TeamService {
 		return teamJoinRequestRepo.findApplicationsByTeamIdAndStatus(teamId, JoinStatus.PENDING);
 	}
 
-	/** 팀 가입 신청 수락 */
+	/**
+	 * 팀 가입 신청 수락
+	 */
 	@Transactional
 	@Loggable
 	@DistributedLock(key = "'team:application:accept:' + #applicationId")
@@ -279,7 +299,9 @@ public class TeamService {
 				teamId, application.getUserId());
 	}
 
-	/** 팀 가입 신청 거절 */
+	/**
+	 * 팀 가입 신청 거절
+	 */
 	@Transactional
 	@Loggable
 	public void rejectTeamApplication(Long teamId, Long applicationId, Long userId) {

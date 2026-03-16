@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.team.repository;
 
-import com.chaean.teamchatsa.domain.team.dto.response.TeamListRes;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamListResponse;
 import com.chaean.teamchatsa.domain.team.model.QTeam;
 import com.chaean.teamchatsa.domain.team.model.QTeamMember;
 import com.querydsl.core.types.Projections;
@@ -8,36 +8,33 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 /**
  * Team QueryDSL 구현체
- * - 네이밍: TeamRepositoryImpl (Spring이 자동 인식)
- * - @Repository 필수
  */
 @Repository
 @RequiredArgsConstructor
 public class TeamRepositoryImpl implements TeamRepositoryCustom {
 
 	private final JPAQueryFactory queryFactory;
+
 	/**
-	 * 팀 목록 조회 (QueryDSL 최적화)
-	 * LEFT JOIN + GROUP BY 방식으로 서브쿼리 제거
+	 * 팀 목록 조회 (QueryDSL 최적화) LEFT JOIN + GROUP BY 방식으로 서브쿼리 제거
 	 */
 	@Override
-	public Slice<TeamListRes> findTeamListWithPagination(Pageable pageable) {
+	public Slice<TeamListResponse> findTeamListWithPagination(Pageable pageable) {
 		QTeam t = QTeam.team;
 		QTeamMember tm = QTeamMember.teamMember;
 
-		List<TeamListRes> content = queryFactory
+		List<TeamListResponse> content = queryFactory
 				.select(Projections.constructor(
-						TeamListRes.class,
+						TeamListResponse.class,
 						t.id,
 						t.name,
 						t.area,
@@ -60,7 +57,7 @@ public class TeamRepositoryImpl implements TeamRepositoryCustom {
 	}
 
 	@Override
-	public Slice<TeamListRes> findTeamListByNameWithPagination(Pageable pageable, String teamName) {
+	public Slice<TeamListResponse> findTeamListByNameWithPagination(Pageable pageable, String teamName) {
 		QTeam t = QTeam.team;
 		QTeamMember tm = QTeamMember.teamMember;
 
@@ -74,9 +71,9 @@ public class TeamRepositoryImpl implements TeamRepositoryCustom {
 		BooleanExpression nameMatch =
 				Expressions.booleanTemplate("{0} ILIKE {1}", t.name, "%" + teamName + "%");
 
-		List<TeamListRes> content = queryFactory
+		List<TeamListResponse> content = queryFactory
 				.select(Projections.constructor(
-						TeamListRes.class,
+						TeamListResponse.class,
 						t.id,
 						t.name,
 						t.area,

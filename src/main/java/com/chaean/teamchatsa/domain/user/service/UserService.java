@@ -2,22 +2,21 @@ package com.chaean.teamchatsa.domain.user.service;
 
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
-import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateReq;
-import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateReq;
-import com.chaean.teamchatsa.domain.user.dto.response.UserRes;
+import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateRequest;
+import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateRequest;
+import com.chaean.teamchatsa.domain.user.dto.response.UserResponse;
 import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +30,7 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public UserRes findUser(Long userId) {
+	public UserResponse findUser(Long userId) {
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
@@ -39,7 +38,7 @@ public class UserService {
 
 		boolean isLinked = authRepo.existsByUserId(user.getId());
 
-		return UserRes.builder()
+		return UserResponse.builder()
 				.id(user.getId())
 				.phone(user.getPhone())
 				.name(user.getUsername())
@@ -54,7 +53,7 @@ public class UserService {
 
 	@Transactional
 	@Loggable
-	public void updateUser(Long userId, UserUpdateReq req) {
+	public void updateUser(Long userId, UserUpdateRequest req) {
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
 
@@ -75,7 +74,7 @@ public class UserService {
 
 	@Transactional
 	@Loggable
-	public void updatePassword(Long userId, PasswordUpdateReq req) {
+	public void updatePassword(Long userId, PasswordUpdateRequest req) {
 		if (req.getNewPassword().length() < 8) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 		}

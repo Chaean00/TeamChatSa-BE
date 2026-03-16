@@ -1,4 +1,4 @@
-package com.chaean.teamchatsa.domain.user.dto.requset;
+package com.chaean.teamchatsa.domain.team.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PasswordUpdateReq {
+public class TeamJoinRequest {
+
 	@NotNull
-	private String currentPassword;
-	@NotNull
-	private String newPassword;
+	private String message;
 }
