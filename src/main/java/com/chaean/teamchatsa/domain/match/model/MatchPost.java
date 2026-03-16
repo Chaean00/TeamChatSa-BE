@@ -13,6 +13,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -20,6 +22,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "match_post")
 @SQLRestriction("deleted_at IS NULL")
@@ -75,23 +79,25 @@ public class MatchPost extends BaseEntity {
 	private String placeName;
 
 	@NotNull
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private MatchPostStatus status = MatchPostStatus.OPEN;
 
-	public static MatchPost of(Long teamId, String title, String content, int headCount,
+	public static MatchPost create(Long teamId, String title, String content, int headCount,
 			LocalDateTime matchDate, Double lat, Double lng, String address, String placeName) {
-		MatchPost post = new MatchPost();
-		post.teamId = teamId;
-		post.title = title;
-		post.content = content;
-		post.headCount = headCount;
-		post.matchDate = matchDate;
-		post.lat = lat;
-		post.lng = lng;
-		post.address = address;
-		post.placeName = placeName;
-		return post;
+
+		return MatchPost.builder()
+				.teamId(teamId)
+				.title(title)
+				.content(content)
+				.headCount(headCount)
+				.matchDate(matchDate)
+				.lat(lat)
+				.lng(lng)
+				.address(address)
+				.placeName(placeName)
+				.build();
 	}
 
 	public void updateStatus(MatchPostStatus status) {

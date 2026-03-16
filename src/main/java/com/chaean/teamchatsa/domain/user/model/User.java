@@ -74,6 +74,11 @@ public class User extends BaseEntity {
 	@Column(name = "position", nullable = false)
 	private Position position = Position.ALL;
 
+	@NotNull
+	@Builder.Default
+	@Column(name = "win_rate", nullable = false)
+	private Double winRate = 0.0;
+
 	/**
 	 * 신규 회원 가입을 위한 정적 팩토리 메서드
 	 */
@@ -91,13 +96,11 @@ public class User extends BaseEntity {
 	/**
 	 * OAuth 연동 등 최소 정보를 이용한 생성 메서드
 	 */
-	public static User of(String username, String email, String passwordHash) {
+	public static User createForOAuth(String username, String email, String passwordHash) {
 		return User.builder()
 				.username(username)
 				.email(email)
 				.password(passwordHash)
-				.role(UserRole.USER)
-				.position(Position.ALL)
 				.build();
 	}
 

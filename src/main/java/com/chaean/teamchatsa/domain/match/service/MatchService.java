@@ -72,7 +72,7 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "사용자가 속한 팀이 없습니다.");
 		}
 
-		MatchPost matchPost = MatchPost.of(
+		MatchPost matchPost = MatchPost.create(
 				teamId,
 				req.getTitle(),
 				req.getContent(),
@@ -225,7 +225,7 @@ public class MatchService {
 		Team applicantTeam = teamRepo.findById(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "팀을 찾을 수 없습니다."));
 
-		MatchApplication matchApplication = MatchApplication.of(matchPost.getId(), teamId, req.getMessage());
+		MatchApplication matchApplication = MatchApplication.create(matchPost.getId(), teamId, req.getMessage());
 
 		try {
 			matchApplicationRepo.save(matchApplication);

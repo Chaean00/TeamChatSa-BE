@@ -73,7 +73,7 @@ public class TeamService {
 
 		teamRepo.save(team);
 
-		TeamMember teamMember = TeamMember.of(team.getId(), userId, TeamRole.LEADER);
+		TeamMember teamMember = TeamMember.create(team.getId(), userId, TeamRole.LEADER);
 
 		teamMemberRepo.save(teamMember);
 	}
@@ -147,7 +147,7 @@ public class TeamService {
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 사용자입니다."));
 
 		TeamApplication application = teamJoinRequestRepo.save(
-				TeamApplication.of(teamId, userId, req.getMessage())
+				TeamApplication.create(teamId, userId, req.getMessage())
 		);
 
 		// 팀 가입 신청 이벤트 발행
@@ -277,7 +277,7 @@ public class TeamService {
 		application.updateStatus(JoinStatus.ACCEPTED);
 
 		// 팀 멤버로 추가
-		TeamMember newMember = TeamMember.of(teamId, application.getUserId(), TeamRole.MEMBER);
+		TeamMember newMember = TeamMember.create(teamId, application.getUserId(), TeamRole.MEMBER);
 
 		teamMemberRepo.save(newMember);
 

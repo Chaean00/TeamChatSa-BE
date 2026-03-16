@@ -47,7 +47,7 @@ public class OAuthService {
 		} else {
 			String username = nickname != null ? nickname : "kakao_" + kakaoId;
 			String randomPassword = encoder.encode(UUID.randomUUID().toString());
-			user = User.of(username, emailFromProvider, randomPassword);
+			user = User.createForOAuth(username, emailFromProvider, randomPassword);
 			userRepo.save(user);
 
 			OAuthAccount link = OAuthAccount.kakaoLink(user.getId(), kakaoId, emailFromProvider, nickname, profileImg);

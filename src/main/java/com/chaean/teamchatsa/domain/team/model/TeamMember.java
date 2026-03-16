@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -18,6 +20,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "team_member")
 @SQLRestriction("deleted_at IS NULL")
@@ -39,15 +43,16 @@ public class TeamMember extends BaseEntity {
 
 	@NotNull
 	@Column(name = "role", nullable = false, length = 20)
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	private TeamRole role = TeamRole.MEMBER;
 
-	public static TeamMember of(Long teamId, Long userId, TeamRole role) {
-		TeamMember member = new TeamMember();
-		member.teamId = teamId;
-		member.userId = userId;
-		member.role = role;
-		return member;
+	public static TeamMember create(Long teamId, Long userId, TeamRole role) {
+		return TeamMember.builder()
+				.teamId(teamId)
+				.userId(userId)
+				.role(role)
+				.build();
 	}
 
 	public void updateRole(TeamRole role) {

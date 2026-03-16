@@ -60,8 +60,7 @@ public class Notification extends BaseEntity {
 	/**
 	 * 알림 생성을 위한 정적 팩토리 메서드
 	 */
-	public static Notification create(Long recipientId, NotificationType type, String content,
-			String link) {
+	public static Notification create(Long recipientId, NotificationType type, String content, String link) {
 		return Notification.builder()
 				.recipientId(recipientId)
 				.type(type)

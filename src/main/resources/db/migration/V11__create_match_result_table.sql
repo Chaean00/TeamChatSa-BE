@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS match_result (
     home_team_id BIGINT NOT NULL,
     away_team_id BIGINT NOT NULL,
     winner_team_id BIGINT,
-    home_score INTEGER,
-    away_score INTEGER,
+    home_score INTEGER NOT NULL,
+    away_score INTEGER NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITHOUT TIME ZONE,
     deleted_at TIMESTAMP WITHOUT TIME ZONE

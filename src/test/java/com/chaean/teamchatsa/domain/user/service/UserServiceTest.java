@@ -10,21 +10,17 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.chaean.teamchatsa.domain.team.model.Position;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
-import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.user.dto.requset.PasswordUpdateRequest;
 import com.chaean.teamchatsa.domain.user.dto.requset.UserUpdateRequest;
 import com.chaean.teamchatsa.domain.user.dto.response.UserResponse;
-import com.chaean.teamchatsa.domain.user.model.OAuthAccount;
-import com.chaean.teamchatsa.domain.user.model.OAuthProvider;
 import com.chaean.teamchatsa.domain.user.model.User;
-import com.chaean.teamchatsa.domain.user.model.UserRole;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.exception.BusinessException;
-import java.time.LocalDateTime;
+import com.navercorp.fixturemonkey.FixtureMonkey;
+import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +34,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
+	private final FixtureMonkey fixtureMonkey = FixtureMonkey.builder()
+			.objectIntrospector(FieldReflectionArbitraryIntrospector.INSTANCE)
+			.defaultNotNull(true)
+			.build();
 	@Mock
 	private UserRepository userRepo;
 	@Mock
@@ -57,69 +57,62 @@ class UserServiceTest {
 		@DisplayName("성공 - 로컬 계정")
 		public void success_localAccount() {
 			//given
-			User user = new User(1L, "테스터", "테스터_닉네임", "abc@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
-			given(userRepo.findById(1L)).willReturn(Optional.of(user));
-			given(teamMemberRepo.findByUserId(1L)).willReturn(Optional.empty());
-			given(authRepo.existsByUserId(1L)).willReturn(false);
+			User user = fixtureMonkey.giveMeOne(User.class);
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserId(user.getId())).willReturn(Optional.empty());
+			given(authRepo.existsByUserId(user.getId())).willReturn(false);
 
 			//when
-			UserResponse result = userService.findUser(1L);
+			UserResponse result = userService.findUser(user.getId());
 
 			//then
-			assertThat(result.getId()).isEqualTo(1L);
-			assertThat(result.getName()).isEqualTo("테스터");
+			assertThat(result.getId()).isEqualTo(user.getId());
+			assertThat(result.getName()).isEqualTo(user.getUsername());
 			assertThat(result.getTeamId()).isNull();
 			assertThat(result.getTeamRole()).isNull();
-			verify(userRepo).findById(1L);
-			verify(teamMemberRepo).findByUserId(1L);
-			verify(authRepo).existsByUserId(1L);
+			verify(userRepo).findById(user.getId());
+			verify(teamMemberRepo).findByUserId(user.getId());
+			verify(authRepo).existsByUserId(user.getId());
 		}
 
 		@Test
 		@DisplayName("성공 - 소셜 계정")
 		public void success_socialAccount() {
 			//given
-			LocalDateTime now = LocalDateTime.now();
-			User user = new User(2L, "테스터", "테스터_닉네임", "abcd@naver.com", "010-1234-5678", "1234", UserRole.USER, Position.CB);
-			TeamMember teamMember = TeamMember.builder()
-					.id(1L)
-					.teamId(10L)
-					.userId(2L)
-					.role(TeamRole.MEMBER)
-					.build();
-			OAuthAccount oAuthAccount = new OAuthAccount(1L, 2L, "1234", "abcd@naver.com", "프로필_닉네임", "이미지URL", now, null,
-					OAuthProvider.KAKAO);
-			given(userRepo.findById(2L)).willReturn(Optional.of(user));
-			given(teamMemberRepo.findByUserId(2L)).willReturn(Optional.of(teamMember));
-			given(authRepo.existsByUserId(2L)).willReturn(true);
+			User user = fixtureMonkey.giveMeOne(User.class);
+			TeamMember teamMember = fixtureMonkey.giveMeOne(TeamMember.class);
+
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(user));
+			given(teamMemberRepo.findByUserId(user.getId())).willReturn(Optional.of(teamMember));
+			given(authRepo.existsByUserId(user.getId())).willReturn(true);
 
 			//when
-			UserResponse result = userService.findUser(2L);
+			UserResponse result = userService.findUser(user.getId());
 
 			//then
-			assertThat(oAuthAccount.getUserId()).isEqualTo(result.getId());
 			assertThat(result.isLocalAccount()).isFalse();
-			assertThat(result.getId()).isEqualTo(2L);
-			assertThat(result.getName()).isEqualTo("테스터");
-			assertThat(result.getTeamId()).isEqualTo(10L);
-			assertThat(result.getTeamRole()).isEqualTo(TeamRole.MEMBER);
-			verify(userRepo).findById(2L);
-			verify(teamMemberRepo).findByUserId(2L);
-			verify(authRepo).existsByUserId(2L);
+			assertThat(result.getId()).isEqualTo(user.getId());
+			assertThat(result.getName()).isEqualTo(user.getUsername());
+			assertThat(result.getTeamId()).isEqualTo(teamMember.getTeamId());
+			assertThat(result.getTeamRole()).isEqualTo(teamMember.getRole());
+			verify(userRepo).findById(user.getId());
+			verify(teamMemberRepo).findByUserId(user.getId());
+			verify(authRepo).existsByUserId(user.getId());
 		}
 
 		@Test
 		@DisplayName("실패 - 유저 없음")
 		public void fail_userNotFound() {
 			//given
-			given(userRepo.findById(99L)).willReturn(Optional.empty());
+			Long userId = 99L;
+			given(userRepo.findById(userId)).willReturn(Optional.empty());
 
 			//when
 			//then
-			assertThatThrownBy(() -> userService.findUser(99L))
+			assertThatThrownBy(() -> userService.findUser(userId))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
-			// 메서드가 호출되지 않아야 함
+
 			verify(authRepo, never()).existsByUserId(anyLong());
 		}
 	}
@@ -132,17 +125,16 @@ class UserServiceTest {
 		@DisplayName("성공")
 		public void success() {
 			//given
-			Long userId = 1L;
-			User user = new User();
+			User user = fixtureMonkey.giveMeOne(User.class);
 			User spyUser = spy(user);
-			given(userRepo.findById(userId)).willReturn(Optional.of(spyUser));
-			UserUpdateRequest req = new UserUpdateRequest("새닉네임", Position.CM, "010-9999-8888");
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(spyUser));
+			UserUpdateRequest req = fixtureMonkey.giveMeOne(UserUpdateRequest.class);
 
 			//when
-			userService.updateUser(userId, req);
+			userService.updateUser(user.getId(), req);
 
 			//then
-			verify(userRepo).findById(userId);
+			verify(userRepo).findById(user.getId());
 			verify(spyUser).update(req);
 			verifyNoMoreInteractions(userRepo);
 		}
@@ -153,7 +145,7 @@ class UserServiceTest {
 			//given
 			Long userId = 99L;
 			given(userRepo.findById(userId)).willReturn(Optional.empty());
-			UserUpdateRequest req = new UserUpdateRequest("새닉네임", Position.CM, "010-9999-8888");
+			UserUpdateRequest req = fixtureMonkey.giveMeOne(UserUpdateRequest.class);
 
 			//when
 			//then
@@ -226,28 +218,25 @@ class UserServiceTest {
 		@DisplayName("성공")
 		public void success() {
 			//given
-			User user = User.builder()
-					.id(1L)
-					.password("123456789")
-					.build();
+			User user = fixtureMonkey.giveMeOne(User.class);
 			User spyUser = spy(user);
-
-			PasswordUpdateRequest req = new PasswordUpdateRequest("currentPassword", "1111111111");
+			PasswordUpdateRequest req = fixtureMonkey.giveMeBuilder(PasswordUpdateRequest.class)
+					.set("newPassword", "validPassword8chars")
+					.sample();
 
 			given(userRepo.findById(user.getId())).willReturn(Optional.of(spyUser));
-			given(encoder.matches("currentPassword", "123456789")).willReturn(true);
-			given(encoder.encode("1111111111")).willReturn("encodedNewPassword");
+			given(encoder.matches(req.getCurrentPassword(), spyUser.getPassword())).willReturn(true);
+			given(encoder.encode(req.getNewPassword())).willReturn("encodedNewPassword");
 
 			//when
 			userService.updatePassword(user.getId(), req);
 
 			//then
 			verify(userRepo).findById(user.getId());
-			verify(spyUser).getPassword();
-			verify(encoder).matches("currentPassword", "123456789");
-			verify(encoder).encode("1111111111");
+			verify(encoder).matches(req.getCurrentPassword(), user.getPassword());
+			verify(encoder).encode(req.getNewPassword());
 			verify(spyUser).updatePassword("encodedNewPassword");
-			verifyNoMoreInteractions(userRepo, encoder, spyUser);
+			verifyNoMoreInteractions(userRepo, encoder);
 		}
 
 		@Test
@@ -255,7 +244,9 @@ class UserServiceTest {
 		public void fail_shortPassword() {
 			//given
 			Long userId = 1L;
-			PasswordUpdateRequest req = new PasswordUpdateRequest("curr", "short");
+			PasswordUpdateRequest req = fixtureMonkey.giveMeBuilder(PasswordUpdateRequest.class)
+					.set("newPassword", "short")
+					.sample();
 
 			//when
 			//then
@@ -270,21 +261,22 @@ class UserServiceTest {
 		@DisplayName("실패 - 비밀번호 일치 X")
 		public void fail_notEqualPassword() {
 			//given
-			User user = User.builder()
-					.id(1L)
-					.password("existingPassword")
-					.build();
-			PasswordUpdateRequest req = new PasswordUpdateRequest("wrongCur", "newTooLongPassword");
-			given(encoder.matches("wrongCur", "existingPassword")).willReturn(false);
+			User user = fixtureMonkey.giveMeOne(User.class);
+			PasswordUpdateRequest req = fixtureMonkey.giveMeBuilder(PasswordUpdateRequest.class)
+					.set("newPassword", "newValidPassword8")
+					.sample();
+
 			given(userRepo.findById(user.getId())).willReturn(Optional.of(user));
+			given(encoder.matches(req.getCurrentPassword(), user.getPassword())).willReturn(false);
 
 			//when
 			//then
 			assertThatThrownBy(() -> userService.updatePassword(user.getId(), req))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("현재 비밀번호가 일치하지 않습니다.");
+
 			verify(userRepo).findById(user.getId());
-			verify(encoder).matches("wrongCur", "existingPassword");
+			verify(encoder).matches(req.getCurrentPassword(), user.getPassword());
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
 
@@ -293,7 +285,9 @@ class UserServiceTest {
 		public void fail_userNotFound() {
 			//given
 			Long userId = 99L;
-			PasswordUpdateRequest req = new PasswordUpdateRequest("anyCur", "newValidPassword");
+			PasswordUpdateRequest req = fixtureMonkey.giveMeBuilder(PasswordUpdateRequest.class)
+					.set("newPassword", "newValidPassword8")
+					.sample();
 			given(userRepo.findById(userId)).willReturn(Optional.empty());
 
 			//when
@@ -301,6 +295,7 @@ class UserServiceTest {
 			assertThatThrownBy(() -> userService.updatePassword(userId, req))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("유저 정보를 찾을 수 없습니다.");
+
 			verify(userRepo).findById(userId);
 			verifyNoMoreInteractions(userRepo, encoder);
 		}
@@ -314,16 +309,15 @@ class UserServiceTest {
 		@DisplayName("성공")
 		public void success() {
 			//given
-			User user = new User();
+			User user = fixtureMonkey.giveMeOne(User.class);
 			User spyUser = spy(user);
-			Long userId = 1L;
-			given(userRepo.findById(userId)).willReturn(Optional.of(spyUser));
+			given(userRepo.findById(user.getId())).willReturn(Optional.of(spyUser));
 
 			//when
-			userService.deleteUser(userId);
+			userService.deleteUser(user.getId());
 
 			//then
-			verify(userRepo).findById(userId);
+			verify(userRepo).findById(user.getId());
 			verify(userRepo).delete(spyUser);
 			verifyNoMoreInteractions(userRepo);
 		}

@@ -45,10 +45,12 @@ public class MatchResult extends BaseEntity {
 	@Column(name = "winner_team_id")
 	private Long winnerTeamId; // 무승부일 경우 null
 
-	@Column(name = "home_score")
+	@NotNull
+	@Column(name = "home_score", nullable = false)
 	private Integer homeScore;
 
-	@Column(name = "away_score")
+	@NotNull
+	@Column(name = "away_score", nullable = false)
 	private Integer awayScore;
 
 	public static MatchResult create(

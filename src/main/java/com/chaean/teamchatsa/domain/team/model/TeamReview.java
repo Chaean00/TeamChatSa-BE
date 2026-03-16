@@ -1,11 +1,20 @@
 package com.chaean.teamchatsa.domain.team.model;
 
 import com.chaean.teamchatsa.global.common.model.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -18,27 +27,29 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at IS NULL")
 @SQLDelete(sql = "UPDATE team_review SET deleted_at = NOW() WHERE id = ?")
 public class TeamReview extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @NotNull
-    @Column(name = "team_id", nullable = false)
-    private Long teamId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @NotNull
-    @Column(name = "reviewer_user_id", nullable = false)
-    private Long reviewerUserId;
+	@NotNull
+	@Column(name = "team_id", nullable = false)
+	private Long teamId;
 
-    @NotNull
-    @Column(name = "match_id", nullable = false)
-    private Long matchId;
+	@NotNull
+	@Column(name = "reviewer_user_id", nullable = false)
+	private Long reviewerUserId;
 
-    @Min(1) @Max(5)
-    @Column(name = "rating", nullable = false)
-    private int rating;
+	@NotNull
+	@Column(name = "match_id", nullable = false)
+	private Long matchId;
 
-    @NotNull
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;
+	@Min(1)
+	@Max(5)
+	@Column(name = "rating", nullable = false)
+	private int rating;
+
+	@NotNull
+	@Column(name = "content", columnDefinition = "TEXT")
+	private String content;
 }

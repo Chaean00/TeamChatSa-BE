@@ -13,6 +13,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -20,6 +22,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "oauth_account")
 @SQLRestriction("deleted_at IS NULL")
@@ -32,7 +36,7 @@ public class OAuthAccount extends BaseEntity {
 	private Long id;
 
 	@NotNull
-	@Column(name = "user_id", nullable = false) // FK
+	@Column(name = "user_id", nullable = false)
 	private Long userId;
 
 	@Size(max = 100)
@@ -67,29 +71,30 @@ public class OAuthAccount extends BaseEntity {
 	public static OAuthAccount kakaoLink(Long userId, String providerUserId, String emailFromProvider,
 			String profileNickname, String profileImageUrl
 	) {
-		OAuthAccount account = new OAuthAccount();
-		account.userId = userId;
-		account.provider = OAuthProvider.KAKAO;
-		account.providerUserId = providerUserId;
-		account.emailFromProvider = emailFromProvider;
-		account.profileNickname = profileNickname;
-		account.profileImageUrl = profileImageUrl;
-		account.connectedAt = LocalDateTime.now();
-		return account;
+		;
+		return OAuthAccount.builder()
+				.userId(userId)
+				.provider(OAuthProvider.KAKAO)
+				.providerUserId(providerUserId)
+				.emailFromProvider(emailFromProvider)
+				.profileNickname(profileNickname)
+				.profileImageUrl(profileImageUrl)
+				.connectedAt(LocalDateTime.now())
+				.build();
 	}
 
 	/**
 	 * 도메인 메서드: 프로필 동기화
 	 */
 	public void syncProfile(String emailFromProvider, String nickname, String imageUrl) {
-        if (emailFromProvider != null) {
-            this.emailFromProvider = emailFromProvider;
-        }
-        if (nickname != null) {
-            this.profileNickname = nickname;
-        }
-        if (imageUrl != null) {
-            this.profileImageUrl = imageUrl;
-        }
+		if (emailFromProvider != null) {
+			this.emailFromProvider = emailFromProvider;
+		}
+		if (nickname != null) {
+			this.profileNickname = nickname;
+		}
+		if (imageUrl != null) {
+			this.profileImageUrl = imageUrl;
+		}
 	}
 }

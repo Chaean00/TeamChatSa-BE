@@ -12,6 +12,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -19,6 +21,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "match_application", uniqueConstraints = {
 		@UniqueConstraint(name = "unique_match_post_team", columnNames = {"post_id", "applicant_team_id"})
@@ -44,16 +48,17 @@ public class MatchApplication extends BaseEntity {
 	private String message;
 
 	@NotNull
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private MatchApplicationStatus status = MatchApplicationStatus.PENDING;
 
-	public static MatchApplication of(Long postId, Long applicantTeamId, String message) {
-		MatchApplication application = new MatchApplication();
-		application.postId = postId;
-		application.applicantTeamId = applicantTeamId;
-		application.message = message;
-		return application;
+	public static MatchApplication create(Long postId, Long applicantTeamId, String message) {
+		return MatchApplication.builder()
+				.postId(postId)
+				.applicantTeamId(applicantTeamId)
+				.message(message)
+				.build();
 	}
 
 	public void updateStatus(MatchApplicationStatus status) {

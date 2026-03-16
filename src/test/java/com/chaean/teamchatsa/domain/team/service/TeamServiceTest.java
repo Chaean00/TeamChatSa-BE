@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 import com.chaean.teamchatsa.domain.team.dto.request.TeamCreateRequest;
@@ -12,7 +13,6 @@ import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinRequest;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationResponse;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailResponse;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListResponse;
-import com.chaean.teamchatsa.domain.team.model.ContactType;
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
@@ -21,8 +21,12 @@ import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
+import com.chaean.teamchatsa.domain.user.model.User;
+import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.global.exception.BusinessException;
+import com.navercorp.fixturemonkey.FixtureMonkey;
+import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -42,17 +47,22 @@ import org.springframework.data.domain.Sort;
 @ExtendWith(MockitoExtension.class)
 class TeamServiceTest {
 
+	private final FixtureMonkey fixtureMonkey = FixtureMonkey.builder()
+			.objectIntrospector(FieldReflectionArbitraryIntrospector.INSTANCE)
+			.defaultNotNull(true)
+			.build();
 	@InjectMocks
 	private TeamService teamService;
-
 	@Mock
 	private TeamRepository teamRepo;
-
 	@Mock
 	private TeamMemberRepository teamMemberRepo;
-
 	@Mock
 	private TeamJoinRequestRepository teamJoinRequestRepo;
+	@Mock
+	private UserRepository userRepo;
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
 
 	@Nested
 	@DisplayName("팀 등록")
@@ -63,7 +73,7 @@ class TeamServiceTest {
 		void success() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = new TeamCreateRequest("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "하하");
+			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
 			given(teamRepo.existsByName(req.getName())).willReturn(false);
 
@@ -80,7 +90,7 @@ class TeamServiceTest {
 		void fail_already_joined() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = new TeamCreateRequest("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중하");
+			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(true);
 
 			// when
@@ -95,7 +105,7 @@ class TeamServiceTest {
 		void fail_duplicate_team_name() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = new TeamCreateRequest("teamName", "area", "description", ContactType.KAKAO, "contact", "imgUrl", "중상");
+			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
 			given(teamRepo.existsByName(req.getName())).willReturn(true);
 
@@ -160,49 +170,42 @@ class TeamServiceTest {
 		@DisplayName("성공 - 팀원인 경우")
 		void success_as_member() {
 			// given
-			Long teamId = 1L;
-			Long userId = 1L;
-			Team team = Team.builder()
-					.id(teamId)
-					.name("teamName")
-					.build();
-			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
-			given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
-			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
-					.willReturn(Optional.of(com.chaean.teamchatsa.domain.team.model.TeamMember.builder()
-							.teamId(teamId)
-							.userId(userId)
-							.role(com.chaean.teamchatsa.domain.team.model.TeamRole.LEADER)
-							.build()));
+			Team team = fixtureMonkey.giveMeOne(Team.class);
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("teamId", team.getId())
+					.set("role", TeamRole.LEADER)
+					.sample();
+
+			given(teamRepo.findById(team.getId())).willReturn(Optional.of(team));
+			given(teamMemberRepo.countByTeamId(team.getId())).willReturn(1L);
+			given(teamMemberRepo.findByTeamIdAndUserId(team.getId(), teamMember.getUserId()))
+					.willReturn(Optional.of(teamMember));
 
 			// when
-			TeamDetailResponse result = teamService.findTeamDetail(teamId, userId);
+			TeamDetailResponse result = teamService.findTeamDetail(team.getId(), teamMember.getUserId());
 
 			// then
-			assertThat(result.getName()).isEqualTo("teamName");
-			assertThat(result.getUserRole()).isEqualTo(com.chaean.teamchatsa.domain.team.model.TeamRole.LEADER);
+			assertThat(result.getName()).isEqualTo(team.getName());
+			assertThat(result.getUserRole()).isEqualTo(TeamRole.LEADER);
 		}
 
 		@Test
 		@DisplayName("성공 - 팀원이 아닌 경우")
 		void success_not_member() {
 			// given
-			Long teamId = 1L;
+			Team team = fixtureMonkey.giveMeOne(Team.class);
 			Long userId = 2L;
-			Team team = Team.builder()
-					.id(teamId)
-					.name("teamName")
-					.build();
-			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
-			given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
-			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
+
+			given(teamRepo.findById(team.getId())).willReturn(Optional.of(team));
+			given(teamMemberRepo.countByTeamId(team.getId())).willReturn(1L);
+			given(teamMemberRepo.findByTeamIdAndUserId(team.getId(), userId))
 					.willReturn(Optional.empty());
 
 			// when
-			TeamDetailResponse result = teamService.findTeamDetail(teamId, userId);
+			TeamDetailResponse result = teamService.findTeamDetail(team.getId(), userId);
 
 			// then
-			assertThat(result.getName()).isEqualTo("teamName");
+			assertThat(result.getName()).isEqualTo(team.getName());
 			assertThat(result.getUserRole()).isNull();
 		}
 
@@ -232,10 +235,25 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
-			TeamJoinRequest req = new TeamJoinRequest("message");
+			TeamJoinRequest req = fixtureMonkey.giveMeBuilder(TeamJoinRequest.class)
+					.set("message", "가입 희망합니다.")
+					.sample();
+			User applicant = fixtureMonkey.giveMeBuilder(User.class)
+					.set("id", userId)
+					.set("nickname", "applicant")
+					.sample();
+			TeamApplication savedApplication = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 10L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("status", JoinStatus.PENDING)
+					.sample();
 
+			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
 			given(teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId)).willReturn(false);
 			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(userRepo.findById(userId)).willReturn(Optional.of(applicant));
+			given(teamJoinRequestRepo.save(any(TeamApplication.class))).willReturn(savedApplication);
 
 			// when
 			teamService.applyToTeam(teamId, userId, req);
@@ -250,7 +268,7 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
-			TeamJoinRequest req = new TeamJoinRequest("message");
+			TeamJoinRequest req = fixtureMonkey.giveMeOne(TeamJoinRequest.class);
 			given(teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId)).willReturn(true);
 
 			// when
@@ -264,7 +282,7 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
-			TeamJoinRequest req = new TeamJoinRequest("message");
+			TeamJoinRequest req = fixtureMonkey.giveMeOne(TeamJoinRequest.class);
 			given(teamJoinRequestRepo.existsByTeamIdAndUserId(teamId, userId)).willReturn(false);
 			given(teamRepo.existsById(teamId)).willReturn(false);
 
@@ -284,26 +302,27 @@ class TeamServiceTest {
 		@DisplayName("성공 - 리더 본인만 있는 팀 삭제")
 		void success() {
 			// given
-			Long teamId = 1L;
-			Team team = Team.builder()
-					.id(teamId)
-					.leaderUserId(1L)
-					.name("teamName")
-					.area("서울")
-					.description("설명")
-					.contactType(ContactType.KAKAO)
-					.contact("contact")
-					.build();
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", 1L)
+					.set("leaderUserId", 10L)
+					.set("name", "삭제할 팀")
+					.sample();
+			TeamMember leaderMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", team.getId())
+					.set("userId", team.getLeaderUserId())
+					.set("role", TeamRole.LEADER)
+					.sample();
 
-			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
-			given(teamMemberRepo.countByTeamId(teamId)).willReturn(1L);
+			given(teamRepo.findById(team.getId())).willReturn(Optional.of(team));
+			given(teamMemberRepo.findByTeamId(team.getId())).willReturn(List.of(leaderMember));
 
 			// when
-			teamService.deleteTeam(teamId);
+			teamService.deleteTeam(team.getId());
 
 			// then
 			verify(teamRepo).delete(team);
-			verify(teamMemberRepo).delete(any(TeamMember.class));
+			verify(teamMemberRepo).delete(leaderMember);
 		}
 
 		@Test
@@ -324,23 +343,30 @@ class TeamServiceTest {
 		@DisplayName("실패 - 팀원이 2명 이상인 경우")
 		void fail_has_members() {
 			// given
-			Long teamId = 1L;
-			Team team = Team.builder()
-					.id(teamId)
-					.leaderUserId(1L)
-					.name("teamName")
-					.area("서울")
-					.description("설명")
-					.contactType(ContactType.KAKAO)
-					.contact("contact")
-					.build();
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", 1L)
+					.set("leaderUserId", 10L)
+					.set("name", "삭제 불가 팀")
+					.sample();
+			TeamMember leaderMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", team.getId())
+					.set("userId", team.getLeaderUserId())
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamMember member = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 2L)
+					.set("teamId", team.getId())
+					.set("userId", 20L)
+					.set("role", TeamRole.MEMBER)
+					.sample();
 
-			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
-			given(teamMemberRepo.countByTeamId(teamId)).willReturn(3L); // 리더 포함 3명
+			given(teamRepo.findById(team.getId())).willReturn(Optional.of(team));
+			given(teamMemberRepo.findByTeamId(team.getId())).willReturn(List.of(leaderMember, member));
 
 			// when
 			// then
-			assertThatThrownBy(() -> teamService.deleteTeam(teamId))
+			assertThatThrownBy(() -> teamService.deleteTeam(team.getId()))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("팀원 존재로 인해 팀을 삭제할 수 없습니다.");
 		}
@@ -370,11 +396,11 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
 			List<TeamApplicationResponse> expected = Collections.emptyList();
 
 			given(teamRepo.existsById(teamId)).willReturn(true);
@@ -399,11 +425,11 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 2L;
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.CO_LEADER)
-					.build();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.CO_LEADER)
+					.sample();
 			List<TeamApplicationResponse> expected = Collections.emptyList();
 
 			given(teamRepo.existsById(teamId)).willReturn(true);
@@ -457,11 +483,11 @@ class TeamServiceTest {
 			// given
 			Long teamId = 1L;
 			Long userId = 3L;
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.MEMBER)
-					.build();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.MEMBER)
+					.sample();
 
 			given(teamRepo.existsById(teamId)).willReturn(true);
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
@@ -484,40 +510,42 @@ class TeamServiceTest {
 		void success() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
 			Long applicantUserId = 2L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication application = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", applicantUserId)
+					.set("status", JoinStatus.PENDING)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication application = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(applicantUserId)
-					.status(JoinStatus.PENDING)
-					.message("가입 신청합니다")
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(application.getId(), teamId))
 					.willReturn(Optional.of(application));
-			given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(false);
-			given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
+			given(teamMemberRepo.existsByUserId(application.getUserId())).willReturn(false);
+			given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(application.getUserId(), application.getId()))
 					.willReturn(List.of());
 
 			// when
-			teamService.acceptTeamApplication(teamId, applicationId, userId);
+			teamService.acceptTeamApplication(teamId, application.getId(), userId);
 
 			// then
 			assertThat(application.getStatus()).isEqualTo(JoinStatus.ACCEPTED);
 			verify(teamMemberRepo).save(any(TeamMember.class));
-			verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId);
+			verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(application.getUserId(), application.getId());
 		}
 
 		@Test
@@ -525,57 +553,58 @@ class TeamServiceTest {
 		void success_with_auto_reject_other_applications() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
 			Long applicantUserId = 2L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication acceptedApplication = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", applicantUserId)
+					.set("status", JoinStatus.PENDING)
+					.sample();
+			TeamApplication otherApplication1 = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 101L)
+					.set("teamId", 2L)
+					.set("userId", applicantUserId)
+					.set("status", JoinStatus.PENDING)
+					.sample();
+			TeamApplication otherApplication2 = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 102L)
+					.set("teamId", 3L)
+					.set("userId", applicantUserId)
+					.set("status", JoinStatus.PENDING)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication acceptedApplication = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(applicantUserId)
-					.status(JoinStatus.PENDING)
-					.message("가입 신청합니다")
-					.build();
-
-			// 다른 팀에 넣은 PENDING 신청들
-			TeamApplication otherApplication1 = TeamApplication.builder()
-					.id(101L)
-					.teamId(2L)
-					.userId(applicantUserId)
-					.status(JoinStatus.PENDING)
-					.build();
-
-			TeamApplication otherApplication2 = TeamApplication.builder()
-					.id(102L)
-					.teamId(3L)
-					.userId(applicantUserId)
-					.status(JoinStatus.PENDING)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(acceptedApplication.getId(), teamId))
 					.willReturn(Optional.of(acceptedApplication));
-			given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(false);
-			given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId))
+			given(teamMemberRepo.existsByUserId(acceptedApplication.getUserId())).willReturn(false);
+			given(teamJoinRequestRepo.findPendingApplicationsByUserIdExcluding(acceptedApplication.getUserId(),
+					acceptedApplication.getId()))
 					.willReturn(List.of(otherApplication1, otherApplication2));
 
 			// when
-			teamService.acceptTeamApplication(teamId, applicationId, userId);
+			teamService.acceptTeamApplication(teamId, acceptedApplication.getId(), userId);
 
 			// then
 			assertThat(acceptedApplication.getStatus()).isEqualTo(JoinStatus.ACCEPTED);
 			assertThat(otherApplication1.getStatus()).isEqualTo(JoinStatus.REJECTED);
 			assertThat(otherApplication2.getStatus()).isEqualTo(JoinStatus.REJECTED);
 			verify(teamMemberRepo).save(any(TeamMember.class));
-			verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(applicantUserId, applicationId);
+			verify(teamJoinRequestRepo).findPendingApplicationsByUserIdExcluding(acceptedApplication.getUserId(),
+					acceptedApplication.getId());
 		}
 
 		@Test
@@ -585,7 +614,7 @@ class TeamServiceTest {
 			Long teamId = 1L;
 			Long applicationId = 100L;
 			Long userId = 1L;
-			given(teamRepo.existsById(teamId)).willReturn(false);
+			lenient().when(teamRepo.findById(teamId)).thenReturn(Optional.empty());
 
 			// when
 			// then
@@ -601,14 +630,19 @@ class TeamServiceTest {
 			Long teamId = 1L;
 			Long applicationId = 100L;
 			Long userId = 3L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", 1L)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.MEMBER)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.MEMBER)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
 
@@ -626,14 +660,19 @@ class TeamServiceTest {
 			Long teamId = 1L;
 			Long applicationId = 100L;
 			Long userId = 1L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
 			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
@@ -651,31 +690,34 @@ class TeamServiceTest {
 		void fail_already_processed() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication application = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", 2L)
+					.set("status", JoinStatus.ACCEPTED)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication application = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(2L)
-					.status(JoinStatus.ACCEPTED)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(application.getId(), teamId))
 					.willReturn(Optional.of(application));
 
 			// when
 			// then
-			assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+			assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, application.getId(), userId))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("이미 처리된 가입 신청입니다.");
 		}
@@ -685,33 +727,35 @@ class TeamServiceTest {
 		void fail_already_member() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
-			Long applicantUserId = 2L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication application = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", 2L)
+					.set("status", JoinStatus.PENDING)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication application = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(applicantUserId)
-					.status(JoinStatus.PENDING)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(application.getId(), teamId))
 					.willReturn(Optional.of(application));
-			given(teamMemberRepo.existsByUserId(applicantUserId)).willReturn(true);
+			given(teamMemberRepo.existsByUserId(application.getUserId())).willReturn(true);
 
 			// when
 			// then
-			assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, applicationId, userId))
+			assertThatThrownBy(() -> teamService.acceptTeamApplication(teamId, application.getId(), userId))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("이미 다른 팀에 가입된 사용자입니다.");
 		}
@@ -726,31 +770,33 @@ class TeamServiceTest {
 		void success() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication application = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", 2L)
+					.set("status", JoinStatus.PENDING)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication application = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(2L)
-					.status(JoinStatus.PENDING)
-					.message("가입 신청합니다")
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(application.getId(), teamId))
 					.willReturn(Optional.of(application));
 
 			// when
-			teamService.rejectTeamApplication(teamId, applicationId, userId);
+			teamService.rejectTeamApplication(teamId, application.getId(), userId);
 
 			// then
 			assertThat(application.getStatus()).isEqualTo(JoinStatus.REJECTED);
@@ -763,7 +809,7 @@ class TeamServiceTest {
 			Long teamId = 1L;
 			Long applicationId = 100L;
 			Long userId = 1L;
-			given(teamRepo.existsById(teamId)).willReturn(false);
+			lenient().when(teamRepo.findById(teamId)).thenReturn(Optional.empty());
 
 			// when
 			// then
@@ -779,14 +825,19 @@ class TeamServiceTest {
 			Long teamId = 1L;
 			Long applicationId = 100L;
 			Long userId = 3L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", 1L)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.MEMBER)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.MEMBER)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
 
@@ -802,33 +853,37 @@ class TeamServiceTest {
 		void fail_already_processed() {
 			// given
 			Long teamId = 1L;
-			Long applicationId = 100L;
 			Long userId = 1L;
+			Team team = fixtureMonkey.giveMeBuilder(Team.class)
+					.set("id", teamId)
+					.set("leaderUserId", userId)
+					.set("name", "테스트팀")
+					.sample();
+			TeamMember teamMember = fixtureMonkey.giveMeBuilder(TeamMember.class)
+					.set("id", 1L)
+					.set("teamId", teamId)
+					.set("userId", userId)
+					.set("role", TeamRole.LEADER)
+					.sample();
+			TeamApplication application = fixtureMonkey.giveMeBuilder(TeamApplication.class)
+					.set("id", 100L)
+					.set("teamId", teamId)
+					.set("userId", 2L)
+					.set("status", JoinStatus.REJECTED)
+					.sample();
 
-			TeamMember teamMember = TeamMember.builder()
-					.teamId(teamId)
-					.userId(userId)
-					.role(TeamRole.LEADER)
-					.build();
-
-			TeamApplication application = TeamApplication.builder()
-					.id(applicationId)
-					.teamId(teamId)
-					.userId(2L)
-					.status(JoinStatus.REJECTED)
-					.build();
-
-			given(teamRepo.existsById(teamId)).willReturn(true);
+			given(teamRepo.findById(teamId)).willReturn(Optional.of(team));
 			given(teamMemberRepo.findByTeamIdAndUserId(teamId, userId))
 					.willReturn(Optional.of(teamMember));
-			given(teamJoinRequestRepo.findByIdAndTeamId(applicationId, teamId))
+			given(teamJoinRequestRepo.findByIdAndTeamId(application.getId(), teamId))
 					.willReturn(Optional.of(application));
 
 			// when
 			// then
-			assertThatThrownBy(() -> teamService.rejectTeamApplication(teamId, applicationId, userId))
+			assertThatThrownBy(() -> teamService.rejectTeamApplication(teamId, application.getId(), userId))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("이미 처리된 가입 신청입니다.");
 		}
 	}
+
 }

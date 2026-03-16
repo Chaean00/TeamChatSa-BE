@@ -49,8 +49,8 @@ public class Team extends BaseEntity {
 	@Column(name = "description")
 	private String description;
 
-	@NotNull
 	@Enumerated(EnumType.STRING)
+	@NotNull
 	@Column(name = "contact_type", nullable = false, length = 30)
 	private ContactType contactType;
 
@@ -59,12 +59,13 @@ public class Team extends BaseEntity {
 	@Column(name = "contact", nullable = false, length = 50)
 	private String contact;
 
-	@NotNull
 	@Enumerated(EnumType.STRING)
+	@NotNull
 	@Column(name = "level", nullable = false, length = 20)
 	private TeamLevel level;
-
+	
 	@Builder.Default
+	@NotNull
 	@Column(name = "win_rate", nullable = false)
 	private Double winRate = 0.0;
 
@@ -101,5 +102,9 @@ public class Team extends BaseEntity {
 
 	public void updateWinRate(double winRate) {
 		this.winRate = winRate;
+	}
+
+	public void updateStyleVector(float[] styleVector) {
+		this.styleVector = styleVector;
 	}
 }

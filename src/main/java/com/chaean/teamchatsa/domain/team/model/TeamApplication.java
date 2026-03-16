@@ -13,6 +13,8 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -20,6 +22,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "team_application", uniqueConstraints = {
 		@UniqueConstraint(name = "uc_team_application_user_id", columnNames = {"team_id", "user_id"})
@@ -41,8 +45,9 @@ public class TeamApplication extends BaseEntity {
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
 
-	@NotNull
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
+	@NotNull
 	@Column(name = "status", nullable = false, length = 30)
 	private JoinStatus status = JoinStatus.PENDING;
 
@@ -50,12 +55,12 @@ public class TeamApplication extends BaseEntity {
 	@Column(name = "message")
 	private String message;
 
-	public static TeamApplication of(Long teamId, Long userId, String message) {
-		TeamApplication application = new TeamApplication();
-		application.teamId = teamId;
-		application.userId = userId;
-		application.message = message;
-		return application;
+	public static TeamApplication create(Long teamId, Long userId, String message) {
+		return TeamApplication.builder()
+				.teamId(teamId)
+				.userId(userId)
+				.message(message)
+				.build();
 	}
 
 	public void updateStatus(JoinStatus status) {
