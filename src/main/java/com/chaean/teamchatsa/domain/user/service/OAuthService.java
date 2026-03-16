@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.user.service;
 
-import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
+import com.chaean.teamchatsa.domain.user.dto.response.TokenResponse;
 import com.chaean.teamchatsa.domain.user.model.OAuthAccount;
 import com.chaean.teamchatsa.domain.user.model.OAuthProvider;
 import com.chaean.teamchatsa.domain.user.model.User;
@@ -11,19 +11,19 @@ import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import com.chaean.teamchatsa.infra.redis.RedisService;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.UUID;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OAuthService {
+
 	private final UserRepository userRepo;
 	private final OAuthAccountRepository oauthRepo;
 	private final JwtProvider jwtProvider;
@@ -32,14 +32,14 @@ public class OAuthService {
 
 	@Transactional
 	@Loggable
-	public TokenRes loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
-		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserIdAndIsDeletedFalse(OAuthProvider.KAKAO, kakaoId);
+	public TokenResponse loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
+		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserId(OAuthProvider.KAKAO, kakaoId);
 		User user;
 
 		if (existing.isPresent()) {
 			OAuthAccount account = existing.get();
-			Optional<User> userOpt = userRepo.findByIdAndIsDeletedFalse(account.getUserId());
-			if (userOpt.isEmpty()) {
+			Optional<User> userOpt = userRepo.findById(account.getUserId());
+			if (userOpt.isEmpty() || userOpt.get().isDeleted()) {
 				throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 			}
 			user = userOpt.get();
@@ -62,6 +62,6 @@ public class OAuthService {
 
 		redisService.setRefreshToken(refreshToken, user.getId());
 
-		return new TokenRes(accessToken, refreshToken);
+		return new TokenResponse(accessToken, refreshToken);
 	}
 }

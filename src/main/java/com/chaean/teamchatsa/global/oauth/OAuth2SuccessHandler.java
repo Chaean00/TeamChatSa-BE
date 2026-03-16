@@ -1,13 +1,19 @@
 package com.chaean.teamchatsa.global.oauth;
 
-import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
+import com.chaean.teamchatsa.domain.user.dto.response.TokenResponse;
 import com.chaean.teamchatsa.domain.user.service.OAuthService;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -15,18 +21,13 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Value;
-
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+	private final OAuthService oAuthService;
 	@Value("${app.auth.redirect-success}")
 	private String redirectSuccess;
 	@Value("${app.auth.redirect-failure}")
@@ -35,10 +36,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 	private String activeProfile;
 	@Value("${app.jwt.refresh-days}")
 	private long refreshDays;
-	private final OAuthService oAuthService;
 
 	@Override
-	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+			throws IOException, ServletException {
 		log.info("[OAuth] Success Handler");
 		OAuth2AuthenticationToken token = (OAuth2AuthenticationToken) authentication;
 		OAuth2User principal = token.getPrincipal();
@@ -53,7 +54,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 		String profileImg = properties != null ? (String) properties.get("profile_image") : null;
 
 		try {
-			TokenRes tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
+			TokenResponse tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
 			// refresh Token 쿠키 설정
 			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
 					.maxAge(Duration.ofDays(refreshDays))

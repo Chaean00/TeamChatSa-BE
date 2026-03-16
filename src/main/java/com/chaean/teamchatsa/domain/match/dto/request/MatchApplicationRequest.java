@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class MatchApplicationReq {
+public class MatchApplicationRequest {
+
 	private String message;
 }

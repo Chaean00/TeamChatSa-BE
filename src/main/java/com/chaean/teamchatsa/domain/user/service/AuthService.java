@@ -1,28 +1,28 @@
 package com.chaean.teamchatsa.domain.user.service;
 
-import com.chaean.teamchatsa.domain.user.dto.response.TokenRes;
-import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
-import com.chaean.teamchatsa.global.jwt.JwtProvider;
-import com.chaean.teamchatsa.domain.user.dto.requset.LoginReq;
-import com.chaean.teamchatsa.domain.user.dto.response.LoginRes;
-import com.chaean.teamchatsa.domain.user.dto.requset.SignupReq;
+import com.chaean.teamchatsa.domain.user.dto.requset.LoginRequest;
+import com.chaean.teamchatsa.domain.user.dto.requset.SignupRequest;
+import com.chaean.teamchatsa.domain.user.dto.response.LoginResponse;
+import com.chaean.teamchatsa.domain.user.dto.response.TokenResponse;
 import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
+import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import com.chaean.teamchatsa.global.jwt.JwtProvider;
 import com.chaean.teamchatsa.infra.redis.RedisService;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
 	private final UserRepository userRepo;
 	private final PasswordEncoder encoder;
 	private final JwtProvider jwtProvider;
@@ -30,31 +30,39 @@ public class AuthService {
 
 	@Transactional
 	@Loggable
-	public void signup(SignupReq req) {
+	public void signup(SignupRequest req) {
 		Optional<User> existsUser = userRepo.findByEmail(req.getEmail());
-		if (existsUser.isPresent() && existsUser.get().isDeleted()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 탈퇴한 이메일입니다.");
-		if (existsUser.isPresent()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
-		if (req.getPassword().length() < 8) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
-
-		if (req.getPhone() != null) {
-			boolean existsPhone = userRepo.existsByPhoneAndIsDeletedFalse(req.getPhone());
-			if (existsPhone) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 회원가입을 진행한 핸드폰 번호입니다.");
+		if (existsUser.isPresent() && existsUser.get().isDeleted()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 탈퇴한 이메일입니다.");
+		}
+		if (existsUser.isPresent()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 존재하는 이메일입니다.");
+		}
+		if (req.getPassword().length() < 8) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호는 8글자 이상이어야 합니다.");
 		}
 
-		User user = User.builder()
-				.username(req.getUserName())
-				.email(req.getEmail())
-				.password(encoder.encode(req.getPassword()))
-				.position(req.getPosition())
-				.phone(req.getPhone())
-				.build();
+		if (req.getPhone() != null) {
+			boolean existsPhone = userRepo.existsByPhone(req.getPhone());
+			if (existsPhone) {
+				throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 회원가입을 진행한 핸드폰 번호입니다.");
+			}
+		}
+
+		User user = User.create(
+				req.getUserName(),
+				req.getEmail(),
+				encoder.encode(req.getPassword()),
+				req.getPosition(),
+				req.getPhone()
+		);
 
 		userRepo.save(user);
 	}
 
 	@Loggable
-	public LoginRes login(LoginReq req) {
-		Optional<User> user = userRepo.findByEmailAndIsDeletedFalse(req.getEmail());
+	public LoginResponse login(LoginRequest req) {
+		Optional<User> user = userRepo.findByEmail(req.getEmail());
 
 		if (user.isEmpty() || !encoder.matches(req.getPassword(), user.get().getPassword())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "잘못된 로그인 정보입니다.");
@@ -72,15 +80,15 @@ public class AuthService {
 		// 사용자별 RT 매핑 저장
 		redisService.setRefreshToken(refreshToken, userId);
 
-		return new LoginRes(accessToken, refreshToken);
+		return new LoginResponse(accessToken, refreshToken);
 	}
 
 	@Loggable
-	public TokenRes reissueToken(String refreshToken) {
+	public TokenResponse reissueToken(String refreshToken) {
 		// RT 검증
 		Long userId = jwtProvider.parseUserId(refreshToken);
 
-		User user = userRepo.findByIdAndIsDeletedFalse(userId)
+		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 		// 기존 RT 삭제
@@ -92,7 +100,7 @@ public class AuthService {
 
 		redisService.setRefreshToken(newRefreshToken, user.getId());
 
-		return new TokenRes(newAccessToken, newRefreshToken);
+		return new TokenResponse(newAccessToken, newRefreshToken);
 	}
 
 	@Loggable

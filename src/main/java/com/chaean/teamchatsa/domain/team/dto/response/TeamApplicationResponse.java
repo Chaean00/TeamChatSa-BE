@@ -1,16 +1,16 @@
 package com.chaean.teamchatsa.domain.team.dto.response;
 
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamApplicationRes {
+public class TeamApplicationResponse {
+
 	private Long applicationId;
 	private Long userId;
 	private String userName;

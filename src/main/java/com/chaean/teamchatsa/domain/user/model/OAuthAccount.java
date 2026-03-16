@@ -1,81 +1,95 @@
 package com.chaean.teamchatsa.domain.user.model;
 
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
-import com.chaean.teamchatsa.global.common.model.TimeEntity;
-import jakarta.persistence.*;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "oauth_account")
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class OAuthAccount extends DeleteAndTimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE oauth_account SET deleted_at = NOW() WHERE id = ?")
+public class OAuthAccount extends BaseEntity {
 
-    @NotNull
-    @Column(name = "user_id", nullable = false) // FK
-    private Long userId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", nullable = false)
+	private Long id;
 
-    @Size(max = 100)
-    @NotNull
-    @Column(name = "provider_user_id", nullable = false, length = 100)
-    private String providerUserId;
+	@NotNull
+	@Column(name = "user_id", nullable = false) // FK
+	private Long userId;
 
-    @Size(max = 100)
-    @Column(name = "email_from_provider", length = 100)
-    private String emailFromProvider;
+	@Size(max = 100)
+	@NotNull
+	@Column(name = "provider_user_id", nullable = false, length = 100)
+	private String providerUserId;
 
-    @Size(max = 100)
-    @Column(name = "profile_nickname", length = 100)
-    private String profileNickname;
+	@Size(max = 100)
+	@Column(name = "email_from_provider", length = 100)
+	private String emailFromProvider;
 
-    @Size(max = 255)
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
+	@Size(max = 100)
+	@Column(name = "profile_nickname", length = 100)
+	private String profileNickname;
 
-    @NotNull
-    @Column(name = "connected_at", nullable = false)
-    private LocalDateTime connectedAt;
+	@Size(max = 255)
+	@Column(name = "profile_image_url")
+	private String profileImageUrl;
 
-    @Column(name = "disconnected_at")
-    private LocalDateTime disconnectedAt;
+	@NotNull
+	@Column(name = "connected_at", nullable = false)
+	private LocalDateTime connectedAt;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "provider", nullable = false)
-    private OAuthProvider provider;
+	@Column(name = "disconnected_at")
+	private LocalDateTime disconnectedAt;
 
-    /** 도메인 메서드: 프로필 동기화 */
-    public void syncProfile(String emailFromProvider, String nickname, String imageUrl) {
-        if (emailFromProvider != null) this.emailFromProvider = emailFromProvider;
-        if (nickname != null) this.profileNickname = nickname;
-        if (imageUrl != null) this.profileImageUrl = imageUrl;
-    }
+	@NotNull
+	@Enumerated(EnumType.STRING)
+	@Column(name = "provider", nullable = false)
+	private OAuthProvider provider;
 
+	public static OAuthAccount kakaoLink(Long userId, String providerUserId, String emailFromProvider,
+			String profileNickname, String profileImageUrl
+	) {
+		OAuthAccount account = new OAuthAccount();
+		account.userId = userId;
+		account.provider = OAuthProvider.KAKAO;
+		account.providerUserId = providerUserId;
+		account.emailFromProvider = emailFromProvider;
+		account.profileNickname = profileNickname;
+		account.profileImageUrl = profileImageUrl;
+		account.connectedAt = LocalDateTime.now();
+		return account;
+	}
 
-    public static OAuthAccount kakaoLink(Long userId, String providerUserId, String emailFromProvider, 
-                                         String profileNickname, String profileImageUrl
-    ) {
-        return OAuthAccount.builder()
-                .userId(userId)
-                .provider(OAuthProvider.KAKAO)
-                .providerUserId(providerUserId)
-                .emailFromProvider(emailFromProvider)
-                .profileNickname(profileNickname)
-                .profileImageUrl(profileImageUrl)
-                .connectedAt(LocalDateTime.now())
-                .build();
-    }
+	/**
+	 * 도메인 메서드: 프로필 동기화
+	 */
+	public void syncProfile(String emailFromProvider, String nickname, String imageUrl) {
+        if (emailFromProvider != null) {
+            this.emailFromProvider = emailFromProvider;
+        }
+        if (nickname != null) {
+            this.profileNickname = nickname;
+        }
+        if (imageUrl != null) {
+            this.profileImageUrl = imageUrl;
+        }
+	}
 }

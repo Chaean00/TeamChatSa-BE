@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamListRes {
+public class TeamListResponse {
+
 	private Long id;
 	private String name;
 	private String area;

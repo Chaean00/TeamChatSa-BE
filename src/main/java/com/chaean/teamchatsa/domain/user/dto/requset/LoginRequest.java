@@ -1,5 +1,6 @@
-package com.chaean.teamchatsa.domain.team.dto.request;
+package com.chaean.teamchatsa.domain.user.dto.requset;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,7 +9,12 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamJoinReq {
+public class LoginRequest {
+
+	@Email
 	@NotNull
-	private String message;
+	private String email;
+
+	@NotNull
+	private String password;
 }

@@ -1,13 +1,17 @@
-ALTER TABLE "team"
+-- team 테이블 제약 조건 추가
+ALTER TABLE team
     ADD CONSTRAINT unique_team_leader UNIQUE (leader_user_id) DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "team_member"
+-- team_member 테이블 제약 조건 추가
+ALTER TABLE team_member
     ADD CONSTRAINT unique_team_user UNIQUE (user_id) DEFERRABLE INITIALLY IMMEDIATE,
     ADD CONSTRAINT unique_team_team_user UNIQUE (team_id, user_id) DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "match_application"
+-- match_application 테이블 제약 조건 추가
+ALTER TABLE match_application
     ADD CONSTRAINT unique_match_post_team UNIQUE (post_id, applicant_team_id) DEFERRABLE INITIALLY IMMEDIATE;
 
+-- user 테이블 제약 조건 추가 (user는 예약어이므로 따옴표 유지)
 ALTER TABLE "user"
     ADD CONSTRAINT unique_user_email UNIQUE (email) DEFERRABLE INITIALLY IMMEDIATE,
-    ADD CONSTRAINT unique_user_nickname UNIQUE (nickname) DEFERRABLE INITIALLY IMMEDIATE
+    ADD CONSTRAINT unique_user_nickname UNIQUE (nickname) DEFERRABLE INITIALLY IMMEDIATE;

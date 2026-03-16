@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.domain.team.repository;
 
-import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberRes;
+import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberResponse;
 import com.chaean.teamchatsa.domain.team.model.QTeamMember;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.user.model.QUser;
@@ -8,10 +8,9 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -20,7 +19,7 @@ public class TeamMemberRepositoryImpl implements TeamMemberRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public List<TeamMemberRes> findTeamMembersByTeamId(Long teamId) {
+	public List<TeamMemberResponse> findTeamMembersByTeamId(Long teamId) {
 		QTeamMember tm = QTeamMember.teamMember;
 		QUser u = QUser.user;
 
@@ -31,7 +30,7 @@ public class TeamMemberRepositoryImpl implements TeamMemberRepositoryCustom {
 
 		return queryFactory
 				.select(Projections.constructor(
-						TeamMemberRes.class,
+						TeamMemberResponse.class,
 						tm.userId,
 						u.username,
 						u.nickname,
@@ -45,8 +44,7 @@ public class TeamMemberRepositoryImpl implements TeamMemberRepositoryCustom {
 						tm.userId.eq(u.id)
 				)
 				.where(
-						tm.teamId.eq(teamId),
-						tm.isDeleted.eq(false)
+						tm.teamId.eq(teamId)
 				)
 				.orderBy(
 						roleOrder.asc(),

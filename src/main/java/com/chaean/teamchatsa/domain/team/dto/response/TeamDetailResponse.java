@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamDetailRes {
+public class TeamDetailResponse {
+
 	private Long id;
 	private Long leaderUserId;
 	private String name;
@@ -20,8 +21,8 @@ public class TeamDetailRes {
 	private String level;
 	private TeamRole userRole;
 
-	public static TeamDetailRes fromEntity(Team team, TeamRole userRole, Long memberCount) {
-		return new TeamDetailRes(
+	public static TeamDetailResponse fromEntity(Team team, TeamRole userRole, Long memberCount) {
+		return new TeamDetailResponse(
 				team.getId(),
 				team.getLeaderUserId(),
 				team.getName(),

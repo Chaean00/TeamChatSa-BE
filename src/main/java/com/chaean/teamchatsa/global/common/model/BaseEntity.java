@@ -3,27 +3,32 @@ package com.chaean.teamchatsa.global.common.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Getter
 @MappedSuperclass
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@SuperBuilder(toBuilder = true)
-public abstract class TimeEntity {
+public abstract class BaseEntity {
+
 	@CreatedDate
-	@Column(name="created_at", updatable=false, nullable=false)
+	@Column(name = "created_at", updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 
 	@LastModifiedDate
-	@Column(name="updated_at", nullable=false)
+	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
+
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt = null;
+
+	public boolean isDeleted() {
+		return this.deletedAt != null;
+	}
 }

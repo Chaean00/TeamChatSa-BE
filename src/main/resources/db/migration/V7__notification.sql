@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS notification
     is_read BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT notification_type_check CHECK (type IN (
        'TEAM_APPLICATION',
        'TEAM_APPLICATION_ACCEPTED',

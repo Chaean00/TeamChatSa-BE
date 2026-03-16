@@ -3,17 +3,17 @@ package com.chaean.teamchatsa.domain.match.dto.request;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @ToString
-public class MatchMapSearchReq {
+public class MatchMapSearchRequest {
+
 	@NotNull(message = "남서쪽 위도는 필수입니다.")
 	@DecimalMin(value = "-90.0", message = "위도는 -90도 이상이어야 합니다.")
 	@DecimalMax(value = "90.0", message = "위도는 90도 이하여야 합니다.")

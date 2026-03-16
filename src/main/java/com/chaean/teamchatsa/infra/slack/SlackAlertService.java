@@ -17,10 +17,8 @@ public class SlackAlertService {
 
 	private final RestClient restClient;
 	private final ObjectMapper objectMapper;
-
 	@Value("${slack.webhook.url}")
 	private String webhookUrl;
-
 	@Value("${slack.webhook.enabled}")
 	private boolean enabled;
 
