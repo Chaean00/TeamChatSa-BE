@@ -46,7 +46,11 @@ public class TeamService {
 	private final ApplicationEventPublisher eventPublisher;
 
 	/**
-	 * 팀 등록
+	 * Creates a new team and assigns the given user as the team's leader.
+	 *
+	 * @param userId the ID of the user who will be the team creator and assigned the LEADER role
+	 * @param req    the team creation details (name, area, description, contact info, level, image URL)
+	 * @throws BusinessException if the user already belongs to a team or if the team name is already in use
 	 */
 	@Transactional
 	@Loggable
@@ -60,7 +64,7 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 팀명입니다.");
 		}
 
-		Team team = Team.of(
+		Team team = Team.create(
 				userId,
 				req.getName(),
 				req.getArea(),
