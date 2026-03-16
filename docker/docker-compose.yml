@@ -1,8 +1,9 @@
 # 로컬 개발용
 services:
   postgres:
-#    image: postgres:17-alpine
-    image: postgis/postgis:17-3.4-alpine
+    build:
+      context: .
+      dockerfile: ./postgres/Dockerfile
     container_name: "${PROJECT_NAME}-postgresql"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}

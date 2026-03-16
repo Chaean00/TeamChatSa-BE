@@ -1,22 +1,31 @@
 spring:
+  profiles:
+    active: dev
+    group:
+      dev: "dev"
+      prod: "prod"
+
   application:
     name: TeamChatSa
 
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT}/${POSTGRES_DB}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
-
+  ai:
+    google:
+      chat:
+        options:
+          model: gemini-2.0-flash
+          temperature: 0.5
+      embedding:
+        text:
+          options:
+            model: text-embedding-004
+            dimension: 384
   jpa:
-
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
       hibernate:
-        jdbc.time_zone: ${TZ}
-        format_sql: true
-    show-sql: false
+        jdbc.time_zone: ${TZ:Asia/Seoul}
 
   security:
     oauth2:
@@ -43,66 +52,16 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
-    schemas: public
-
-  # Redis
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-
-  # Spring Cloud GCP
-  cloud:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}
-      credentials:
-        encoded-key: ${GCP_STORAGE_CREDENTIALS:}
 
 server:
   port: ${SERVER_PORT:8080}
-  
+
 app:
   jwt:
-    secret: ${JWT_SECRET}
     access-minutes: 30
     refresh-days: 14
-  auth:
-    redirect-success: http://localhost:3000/auth/kakao/callback
-    redirect-failure: http://localhost:3000/auth/kakao/failure
-
-gcp:
-  storage:
-    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
-    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
-
-# Actuator & Prometheus
 management:
   endpoints:
     web:
       exposure:
-        include: health, prometheus
-  endpoint:
-    health:
-      show-details: never
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-
-logging:
-  level:
-    org.hibernate.SQL: DEBUG                 # 실행된 SQL
-    org.hibernate.orm.jdbc.bind: TRACE       # 파라미터 바인딩 (Hibernate 6)
-    # 아래 두 줄은 혹시 몰라 같이 켜두는 옵션 (상황에 따라 하나만 먹을 수도 있음)
-    org.hibernate.type.descriptor.jdbc: TRACE
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
-slack:
-  webhook:
-    url: ${SLACK_WEBHOOK_URL:}
-    enabled: ${SLACK_ALERT_ENABLED:true}
-  alert:
-    channel: "#alert"
-    username: "TeamChatSa Bot"
-    icon-emoji: ":rotating_light:"
+        include: [ health, prometheus ]

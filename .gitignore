@@ -45,3 +45,4 @@ docs/
 logs/
 k6/
 reports/
+**/.env

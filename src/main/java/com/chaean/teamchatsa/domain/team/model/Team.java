@@ -12,17 +12,19 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 @Table(name = "team")
-@SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE team SET deleted_at = NOW() WHERE id = ?")
 public class Team extends BaseEntity {
 
 	@Id
@@ -58,24 +60,46 @@ public class Team extends BaseEntity {
 	private String contact;
 
 	@NotNull
+	@Enumerated(EnumType.STRING)
 	@Column(name = "level", nullable = false, length = 20)
-	private String level;
+	private TeamLevel level;
+
+	@Builder.Default
+	@Column(name = "win_rate", nullable = false)
+	private Double winRate = 0.0;
 
 	@Size(max = 255)
 	@Column(name = "img")
 	private String img;
 
-	public static Team of(Long leaderUserId, String name, String area, String description, ContactType contactType, String contact,
-			String level, String img) {
-		Team team = new Team();
-		team.leaderUserId = leaderUserId;
-		team.name = name;
-		team.area = area;
-		team.description = description;
-		team.contactType = contactType;
-		team.contact = contact;
-		team.level = level;
-		team.img = img;
-		return team;
+	@JdbcTypeCode(SqlTypes.VECTOR)
+	@Column(name = "style_vector", columnDefinition = "vector(512)")
+	private float[] styleVector;
+
+	public static Team create(
+			Long leaderUserId,
+			String name,
+			String area,
+			String description,
+			ContactType contactType,
+			String contact,
+			TeamLevel level,
+			String img
+	) {
+		return Team.builder()
+				.leaderUserId(leaderUserId)
+				.name(name)
+				.area(area)
+				.description(description)
+				.contactType(contactType)
+				.contact(contact)
+				.level(level)
+				.img(img)
+				.winRate(0.0)
+				.build();
+	}
+
+	public void updateWinRate(double winRate) {
+		this.winRate = winRate;
 	}
 }

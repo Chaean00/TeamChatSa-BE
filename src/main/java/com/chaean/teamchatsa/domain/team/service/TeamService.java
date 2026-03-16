@@ -60,7 +60,7 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 팀명입니다.");
 		}
 
-		Team team = Team.of(
+		Team team = Team.create(
 				userId,
 				req.getName(),
 				req.getArea(),

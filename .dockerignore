@@ -28,7 +28,7 @@ test-results/
 reports/
 
 # Environment files
-.env
+.env.dev
 .env.*
 *.env
 
