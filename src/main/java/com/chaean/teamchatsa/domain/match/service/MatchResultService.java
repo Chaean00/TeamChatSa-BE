@@ -13,37 +13,40 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class MatchResultService {
 
 	private final MatchResultRepository matchResultRepository;
 	private final TeamRepository teamRepository;
 
-	public void registerMatchResult(Long userId, MatchResultCreateRequest req) {
+	@Transactional
+	public void registerMatchResult(MatchResultCreateRequest req) {
+		// 승리 팀 결정
 		Long winnerTeamId = determineWinner(req);
 
-		MatchResult result = MatchResult.builder()
-				.matchPostId(req.getMatchPostId())
-				.homeTeamId(req.getHomeTeamId())
-				.awayTeamId(req.getAwayTeamId())
-				.homeScore(req.getHomeScore())
-				.awayScore(req.getAwayScore())
-				.winnerTeamId(winnerTeamId)
-				.build();
+		MatchResult result = MatchResult.create(
+				req.getMatchPostId(),
+				req.getHomeTeamId(),
+				req.getAwayTeamId(),
+				req.getHomeScore(),
+				req.getAwayScore(),
+				winnerTeamId
+		);
 
+		// 경기 결과 저장
 		matchResultRepository.save(result);
 
+		// 승률 업데이트
 		updateTeamWinRate(req.getHomeTeamId());
 		updateTeamWinRate(req.getAwayTeamId());
 	}
 
 	private Long determineWinner(MatchResultCreateRequest req) {
-        if (req.getHomeScore() > req.getAwayScore()) {
-            return req.getHomeTeamId();
-        }
-        if (req.getAwayScore() > req.getHomeScore()) {
-            return req.getAwayTeamId();
-        }
+		if (req.getHomeScore() > req.getAwayScore()) {
+			return req.getHomeTeamId();
+		}
+		if (req.getAwayScore() > req.getHomeScore()) {
+			return req.getAwayTeamId();
+		}
 		return null;
 	}
 

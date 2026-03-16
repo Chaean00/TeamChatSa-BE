@@ -1,9 +1,18 @@
 package com.chaean.teamchatsa.domain.match.model;
 
 import com.chaean.teamchatsa.global.common.model.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -17,28 +26,47 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE match_result SET deleted_at = NOW() WHERE id = ?")
 public class MatchResult extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @NotNull
-    @Column(name = "match_post_id", nullable = false)
-    private Long matchPostId;
+	@NotNull
+	@Column(name = "match_post_id", nullable = false)
+	private Long matchPostId;
 
-    @NotNull
-    @Column(name = "home_team_id", nullable = false)
-    private Long homeTeamId;
+	@NotNull
+	@Column(name = "home_team_id", nullable = false)
+	private Long homeTeamId;
 
-    @NotNull
-    @Column(name = "away_team_id", nullable = false)
-    private Long awayTeamId;
+	@NotNull
+	@Column(name = "away_team_id", nullable = false)
+	private Long awayTeamId;
 
-    @Column(name = "winner_team_id")
-    private Long winnerTeamId; // 무승부일 경우 null
+	@Column(name = "winner_team_id")
+	private Long winnerTeamId; // 무승부일 경우 null
 
-    @Column(name = "home_score")
-    private Integer homeScore;
+	@Column(name = "home_score")
+	private Integer homeScore;
 
-    @Column(name = "away_score")
-    private Integer awayScore;
+	@Column(name = "away_score")
+	private Integer awayScore;
+
+	public static MatchResult create(
+			Long matchPostId,
+			Long homeTeamId,
+			Long awayTeamId,
+			Integer homeScore,
+			Integer awayScore,
+			Long winnerTeamId
+	) {
+		return MatchResult.builder()
+				.matchPostId(matchPostId)
+				.homeTeamId(homeTeamId)
+				.awayTeamId(awayTeamId)
+				.homeScore(homeScore)
+				.awayScore(awayScore)
+				.winnerTeamId(winnerTeamId)
+				.build();
+	}
+
 }

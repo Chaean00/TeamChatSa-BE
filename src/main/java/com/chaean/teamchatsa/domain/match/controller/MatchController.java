@@ -57,9 +57,10 @@ public class MatchController {
 
 	@Operation(summary = "경기 결과 등록 API", description = "경기가 종료된 후 결과를 등록합니다.")
 	@PostMapping("/results")
-	public ResponseEntity<ApiResponse<Void>> createMatchResult(@AuthenticationPrincipal Long userId,
-			@RequestBody @Validated MatchResultCreateRequest req) {
-		matchResultService.registerMatchResult(userId, req);
+	public ResponseEntity<ApiResponse<Void>> createMatchResult(
+			@RequestBody @Validated MatchResultCreateRequest req
+	) {
+		matchResultService.registerMatchResult(req);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
 	}
 
