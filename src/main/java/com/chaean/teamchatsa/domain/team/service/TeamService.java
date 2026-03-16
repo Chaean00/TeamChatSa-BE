@@ -67,6 +67,7 @@ public class TeamService {
 				req.getDescription(),
 				req.getContactType(),
 				req.getContact(),
+				req.getLevel(),
 				req.getImgUrl()
 		);
 

@@ -4,10 +4,12 @@ import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchRequest;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchResultCreateRequest;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchMapResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
+import com.chaean.teamchatsa.domain.match.service.MatchResultService;
 import com.chaean.teamchatsa.domain.match.service.MatchService;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -38,8 +41,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class MatchController {
 
 	private final MatchService matchService;
+	private final MatchResultService matchResultService;
 
-	@Operation(summary = "매치 게시물 등록 API", description = "새로운 매치 게시물을 등록합니다.")
+	@Operation(summary = "매치 포스트 생성 API", description = "새로운 매치 포스트를 생성합니다.")
 	@PostMapping("")
 	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
 	public ResponseEntity<ApiResponse<Void>> createMatchPost(
@@ -49,6 +53,14 @@ public class MatchController {
 		matchService.registerMatchPost(userId, req);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.success("매치 게시물 등록 성공", null));
+	}
+
+	@Operation(summary = "경기 결과 등록 API", description = "경기가 종료된 후 결과를 등록합니다.")
+	@PostMapping("/results")
+	public ResponseEntity<ApiResponse<Void>> createMatchResult(@AuthenticationPrincipal Long userId,
+			@RequestBody @Validated MatchResultCreateRequest req) {
+		matchResultService.registerMatchResult(userId, req);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
 	}
 
 	@Operation(summary = "매치 게시물 삭제 API", description = "기존 매치 게시물을 삭제합니다.")

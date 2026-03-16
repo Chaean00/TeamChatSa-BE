@@ -17,18 +17,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Builder
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 @Table(name = "team")
-@SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE team SET deleted_at = NOW() WHERE id = ?")
 public class Team extends BaseEntity {
 
 	@Id
@@ -87,6 +83,7 @@ public class Team extends BaseEntity {
 			String description,
 			ContactType contactType,
 			String contact,
+			TeamLevel level,
 			String img
 	) {
 		return Team.builder()
@@ -96,7 +93,13 @@ public class Team extends BaseEntity {
 				.description(description)
 				.contactType(contactType)
 				.contact(contact)
+				.level(level)
 				.img(img)
+				.winRate(0.0)
 				.build();
+	}
+
+	public void updateWinRate(double winRate) {
+		this.winRate = winRate;
 	}
 }
