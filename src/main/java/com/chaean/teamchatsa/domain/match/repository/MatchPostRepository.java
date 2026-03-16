@@ -28,11 +28,10 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 			LEFT JOIN
 				team t
 			    ON t.id = mp.team_id
-				   AND t.is_deleted = false
+				   AND t.deleted_at IS NULL
 			WHERE
-				mp.is_deleted = false
-				AND mp.status = 'OPEN'
-				AND mp.location && ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
+				mp.deleted_at IS NULL
+				AND mp.status = 'OPEN'				AND mp.location && ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
 				AND ST_Intersects(mp.location, ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326))
 				AND mp.match_date >= :currentDateTime
 				AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
