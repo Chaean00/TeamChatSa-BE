@@ -27,12 +27,12 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "\"user\"", uniqueConstraints = {
+@Table(name = "users", uniqueConstraints = {
 		@UniqueConstraint(name = "uc_user_nickname", columnNames = {"nickname"}),
 		@UniqueConstraint(name = "uc_user_email", columnNames = {"email"})
 })
 @SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE \"user\" SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ?")
 public class User extends BaseEntity {
 
 	@Id
@@ -73,11 +73,6 @@ public class User extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "position", nullable = false)
 	private Position position = Position.ALL;
-
-	@NotNull
-	@Builder.Default
-	@Column(name = "win_rate", nullable = false)
-	private Double winRate = 0.0;
 
 	/**
 	 * 신규 회원 가입을 위한 정적 팩토리 메서드

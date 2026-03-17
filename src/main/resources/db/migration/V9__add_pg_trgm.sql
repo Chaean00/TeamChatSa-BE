@@ -1,3 +1,5 @@
+SET search_path TO app, public;
+
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
        
 CREATE INDEX idx_team_name_trgm_not_deleted

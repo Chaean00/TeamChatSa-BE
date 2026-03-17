@@ -1,3 +1,5 @@
+SET search_path TO app, public;
+
 -- 알림 테이블 생성
 CREATE TABLE IF NOT EXISTS notification
 (
