@@ -89,7 +89,7 @@ public class MatchController {
 	}
 
 	@Operation(summary = "AI 매치 추천 API", description = "사용자 검색어를 바탕으로 신청 가능한 매치 게시물을 추천합니다.")
-	@GetMapping("/recommendations")
+	@PostMapping("/recommendations")
 	public ResponseEntity<ApiResponse<List<MatchRecommendationResponse>>> recommendMatches(
 			@AuthenticationPrincipal Long userId,
 			@RequestBody @Validated MatchRecommendationRequest req
