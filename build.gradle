@@ -86,6 +86,7 @@ dependencies {
     implementation platform("org.springframework.ai:spring-ai-bom:1.1.2")
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.hibernate.orm:hibernate-vector:6.6.33.Final'
 }
 
 def generated = layout.buildDirectory.dir("generated/querydsl").get().asFile;

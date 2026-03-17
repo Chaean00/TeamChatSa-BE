@@ -4,11 +4,14 @@ import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchRequest;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchRecommendationRequest;
 import com.chaean.teamchatsa.domain.match.dto.request.MatchResultCreateRequest;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchMapResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchRecommendationResponse;
+import com.chaean.teamchatsa.domain.match.service.MatchRecommendationService;
 import com.chaean.teamchatsa.domain.match.service.MatchResultService;
 import com.chaean.teamchatsa.domain.match.service.MatchService;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
@@ -42,6 +45,7 @@ public class MatchController {
 
 	private final MatchService matchService;
 	private final MatchResultService matchResultService;
+	private final MatchRecommendationService matchRecommendationService;
 
 	@Operation(summary = "매치 포스트 생성 API", description = "새로운 매치 포스트를 생성합니다.")
 	@PostMapping("")
@@ -82,6 +86,16 @@ public class MatchController {
 	) {
 		SliceResponse<MatchPostListResponse> response = matchService.findMatchPosts(req);
 		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", response));
+	}
+
+	@Operation(summary = "AI 매치 추천 API", description = "사용자 검색어를 바탕으로 신청 가능한 매치 게시물을 추천합니다.")
+	@PostMapping("/recommendations")
+	public ResponseEntity<ApiResponse<List<MatchRecommendationResponse>>> recommendMatches(
+			@AuthenticationPrincipal Long userId,
+			@RequestBody @Validated MatchRecommendationRequest req
+	) {
+		List<MatchRecommendationResponse> response = matchRecommendationService.recommendMatches(userId, req);
+		return ResponseEntity.ok(ApiResponse.success("매치 추천 조회 성공", response));
 	}
 
 	@Operation(summary = "위치 기반 매치 검색 API", description = "지도 범위(BoundingBox) 내의 매치 게시물을 검색합니다.")

@@ -2,6 +2,7 @@ package com.chaean.teamchatsa.domain.match.repository;
 
 import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
+import com.chaean.teamchatsa.domain.match.repository.projection.MatchRecommendationProjection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,9 +25,9 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 				mp.lat AS lat,
 				mp.lng AS lng
 			FROM
-				match_post mp
+				app.match_post mp
 			LEFT JOIN
-				team t
+				app.team t
 			    ON t.id = mp.team_id
 				   AND t.deleted_at IS NULL
 			WHERE
@@ -51,5 +52,46 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 			@Param("endDate") LocalDate endDate,
 			@Param("headCount") Integer headCount,
 			@Param("region") String region
+	);
+
+	@Query(value = """
+			SELECT
+				mp.id AS matchId,
+				mp.title AS matchTitle,
+				mp.place_name AS placeName,
+				mp.match_date AS matchDateTime,
+				t.id AS teamId,
+				t.name AS teamName,
+				mp.address AS matchAddress,
+				t.level AS teamLevel
+			FROM
+				app.match_post mp
+			JOIN
+				app.team t
+			    ON t.id = mp.team_id
+			   AND t.deleted_at IS NULL
+			WHERE
+				mp.deleted_at IS NULL
+				AND mp.team_id <> :myTeamId
+				AND mp.status = 'OPEN'
+				AND mp.match_date >= :currentDateTime
+				AND t.style_vector IS NOT NULL
+				AND t.level IN (:levels)
+				AND t.win_rate BETWEEN :minWinRate AND :maxWinRate
+				AND (:region IS NULL OR mp.address LIKE CONCAT(:region, '%'))
+			ORDER BY
+				t.style_vector <=> CAST(:queryVector AS vector),
+				mp.match_date ASC,
+				mp.id DESC
+			LIMIT 10
+			""", nativeQuery = true)
+	List<MatchRecommendationProjection> findRecommendedMatches(
+			@Param("myTeamId") Long myTeamId,
+			@Param("queryVector") String queryVector,
+			@Param("region") String region,
+			@Param("levels") List<Integer> levels,
+			@Param("minWinRate") double minWinRate,
+			@Param("maxWinRate") double maxWinRate,
+			@Param("currentDateTime") LocalDateTime currentDateTime
 	);
 }
