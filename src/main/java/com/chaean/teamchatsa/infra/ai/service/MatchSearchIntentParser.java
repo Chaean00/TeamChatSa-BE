@@ -31,10 +31,10 @@ public class MatchSearchIntentParser {
 			String prompt = """
 					너는 풋살 매치 검색어를 분석해 DB 검색용 JSON만 반환하는 파서다.
 					설명 문장, 코드블록, 마크다운 없이 JSON만 출력해라.
-
+					
 					레벨 척도:
 					1=하하, 2=하, 3=중하, 4=중, 5=중상, 6=상, 7=상상
-
+					
 					반환 JSON 형식:
 					{
 					  "levelIn": [정수 배열],
@@ -43,7 +43,7 @@ public class MatchSearchIntentParser {
 					  "region": "서울 또는 null",
 					  "vectorKeyword": "스타일/매너 관련 키워드"
 					}
-
+					
 					규칙:
 					1. levelIn은 반드시 1~7 정수만 포함해라.
 					2. 승률은 0~100 범위의 숫자로 반환해라.
@@ -53,13 +53,13 @@ public class MatchSearchIntentParser {
 					6. 비슷한 수준이면 levelIn은 내 팀 레벨 기준 ±1 범위, 승률은 ±10 범위를 기본값으로 사용해라.
 					7. 높은 수준이면 levelIn은 내 팀보다 높은 레벨 위주, 승률은 내 팀 승률 이상으로 사용해라.
 					8. 낮은 수준이면 levelIn은 내 팀보다 낮은 레벨 위주, 승률은 내 팀 승률 이하로 사용해라.
-
+					
 					내 팀 정보:
 					- level: %d
 					- winRate: %.1f
 					- area: %s
 					- description: %s
-
+					
 					사용자 검색어:
 					%s
 					""".formatted(
@@ -83,8 +83,10 @@ public class MatchSearchIntentParser {
 	private MatchSearchIntent sanitize(MatchSearchIntent intent, Team myTeam, String query) {
 		MatchSearchIntent sanitized = new MatchSearchIntent();
 		sanitized.setLevelIn(sanitizeLevels(intent.getLevelIn(), myTeam, query));
-		sanitized.setWinRateMin(sanitizeWinRateMin(intent.getWinRateMin(), myTeam));
-		sanitized.setWinRateMax(sanitizeWinRateMax(intent.getWinRateMax(), myTeam));
+		double winRateMin = sanitizeWinRateMin(intent.getWinRateMin(), myTeam);
+		double winRateMax = sanitizeWinRateMax(intent.getWinRateMax(), myTeam);
+		sanitized.setWinRateMin(Math.min(winRateMin, winRateMax));
+		sanitized.setWinRateMax(Math.max(winRateMin, winRateMax));
 		sanitized.setRegion(sanitizeRegion(intent.getRegion(), myTeam.getArea()));
 		sanitized.setVectorKeyword(sanitizeVectorKeyword(intent.getVectorKeyword(), query));
 		return sanitized;
