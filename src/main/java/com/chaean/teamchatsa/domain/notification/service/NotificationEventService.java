@@ -38,8 +38,14 @@ public class NotificationEventService {
 		// 알림 수신자 ID 목록 변환
 		List<Long> leaderUserIds = leaders.stream()
 				.map(TeamMember::getUserId)
+				.distinct()
 				.toList();
 
+		if (leaderUserIds.isEmpty()) {
+			log.warn("팀 가입 신청 알림 대상 없음: teamId={}", event.getTeamId());
+			return;
+		}
+		
 		// 팀 가입 신청 알림 일괄 저장
 		notificationService.createNotifications(
 				leaderUserIds,
