@@ -5,12 +5,12 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- 2. Team 테이블 컬럼 수정 및 추가
 ALTER TABLE team
-    ADD COLUMN IF NOT EXISTS win_rate DOUBLE PRECISION DEFAULT 0.0 NOT NULL;
+    ADD COLUMN win_rate DOUBLE PRECISION DEFAULT 0.0 NOT NULL;
 ALTER TABLE team
-    ADD COLUMN IF NOT EXISTS style_vector vector(384);
+    ADD COLUMN style_vector vector(384);
 
 -- 3. Team Review 테이블 생성
-CREATE TABLE IF NOT EXISTS team_review
+CREATE TABLE team_review
 (
     id               BIGSERIAL PRIMARY KEY,
     team_id          BIGINT                      NOT NULL,
@@ -23,4 +23,4 @@ CREATE TABLE IF NOT EXISTS team_review
     deleted_at       TIMESTAMP WITHOUT TIME ZONE
 );
 
-CREATE INDEX IF NOT EXISTS idx_team_review_team_id ON team_review (team_id);
+CREATE INDEX idx_team_review_team_id ON team_review (team_id);
