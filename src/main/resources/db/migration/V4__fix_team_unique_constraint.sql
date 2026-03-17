@@ -1,3 +1,5 @@
+SET search_path TO app, public;
+
 -- team 테이블의 name UNIQUE 제약 제거
 ALTER TABLE team
     DROP CONSTRAINT IF EXISTS team_name_key;

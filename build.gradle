@@ -47,7 +47,6 @@ dependencies {
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.navercorp.fixturemonkey:fixture-monkey-starter:1.1.0'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'com.navercorp.fixturemonkey:fixture-monkey-starter:1.1.0'
@@ -86,8 +85,7 @@ dependencies {
     // Spring AI BOM
     implementation platform("org.springframework.ai:spring-ai-bom:1.1.2")
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
-    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
-    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 }
 
 def generated = layout.buildDirectory.dir("generated/querydsl").get().asFile;

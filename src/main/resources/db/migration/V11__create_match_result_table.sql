@@ -1,3 +1,5 @@
+SET search_path TO app, public;
+
 -- 1. Match Result 테이블 생성
 CREATE TABLE IF NOT EXISTS match_result (
     id BIGSERIAL PRIMARY KEY,

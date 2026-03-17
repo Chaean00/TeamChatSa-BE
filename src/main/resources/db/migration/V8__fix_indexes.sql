@@ -1,3 +1,5 @@
+SET search_path TO app, public;
+
 DROP INDEX IF EXISTS idx_match_post_status_date;
 
 CREATE INDEX idx_match_post_status_date

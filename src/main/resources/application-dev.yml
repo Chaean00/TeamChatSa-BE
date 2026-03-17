@@ -12,14 +12,17 @@ spring:
       password: ${REDIS_PASSWORD:}
 
   ai:
-    google:
-      genai:
-        api-key: ${GOOGLE_GENAI_API_KEY}
-        project-id: ${GOOGLE_PROJECT_ID}
-        embedding:
-          api-key: ${GOOGLE_GENAI_API_KEY}
-          project-id: ${GOOGLE_PROJECT_ID}
-  #        location: ${GOOGLE_LOCATION}
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+      embedding:
+        api-key: ${OPENAI_API_KEY}
+        options:
+          model: text-embedding-3-small
+          dimensions: 384
+          encodingFormat: float
 
   cloud:
     gcp:
@@ -31,8 +34,14 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        default_schema: app
         format_sql: true
 
+  flyway:
+    schemas: app
+    default-schema: app
+    create-schemas: true
+    baseline-on-migrate: false
 
 app:
   jwt:

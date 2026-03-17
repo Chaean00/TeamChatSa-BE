@@ -1,5 +1,7 @@
-CREATE INDEX idx_user_email_not_deleted ON "user" (email) WHERE deleted_at IS NULL;
-CREATE INDEX idx_user_nickname_not_deleted ON "user" (nickname) WHERE deleted_at IS NULL;
+SET search_path TO app, public;
+
+CREATE INDEX idx_user_email_not_deleted ON users (email) WHERE deleted_at IS NULL;
+CREATE INDEX idx_user_nickname_not_deleted ON users (nickname) WHERE deleted_at IS NULL;
 
 COMMENT ON INDEX idx_user_email_not_deleted IS '로그인 인증 최적화 (Partial Index)';
 COMMENT ON INDEX idx_user_nickname_not_deleted IS '닉네임 중복 체크 최적화';
@@ -46,7 +48,7 @@ COMMENT ON INDEX idx_match_app_post_team_unique IS '중복 신청 방지 (UNIQUE
 CREATE INDEX idx_oauth_provider_userid_not_deleted ON oauth_account (provider, provider_user_id) WHERE deleted_at IS NULL;
 COMMENT ON INDEX idx_oauth_provider_userid_not_deleted IS 'OAuth 인증 최적화 (Kakao 로그인)';
 
-ANALYZE "user";
+ANALYZE users;
 ANALYZE team;
 ANALYZE team_member;
 ANALYZE team_application;
