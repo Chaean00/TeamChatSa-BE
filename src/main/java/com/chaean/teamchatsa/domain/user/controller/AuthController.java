@@ -55,7 +55,7 @@ public class AuthController {
 
 		return ResponseEntity.status(200)
 				.header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-				.body(ApiResponse.success("로그인에 성공했습니다.", new LoginResponse(loginRes.getAccessToken(), loginRes.getRefreshToken())));
+				.body(ApiResponse.success("로그인에 성공했습니다.", new LoginResponse(loginRes.getAccessToken(), null)));
 	}
 
 	@Operation(summary = "토큰 재발급 API", description = "만료된 액세스 토큰을 리프레시 토큰으로 재발급합니다.")
