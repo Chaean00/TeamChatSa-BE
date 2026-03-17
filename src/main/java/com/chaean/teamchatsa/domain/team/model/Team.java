@@ -1,7 +1,9 @@
 package com.chaean.teamchatsa.domain.team.model;
 
+import com.chaean.teamchatsa.domain.team.converter.TeamLevelConverter;
 import com.chaean.teamchatsa.global.common.model.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -59,11 +61,11 @@ public class Team extends BaseEntity {
 	@Column(name = "contact", nullable = false, length = 50)
 	private String contact;
 
-	@Enumerated(EnumType.STRING)
 	@NotNull
-	@Column(name = "level", nullable = false, length = 20)
+	@Convert(converter = TeamLevelConverter.class)
+	@Column(name = "level", nullable = false)
 	private TeamLevel level;
-	
+
 	@Builder.Default
 	@NotNull
 	@Column(name = "win_rate", nullable = false)
@@ -74,7 +76,7 @@ public class Team extends BaseEntity {
 	private String img;
 
 	@JdbcTypeCode(SqlTypes.VECTOR)
-	@Column(name = "style_vector", columnDefinition = "vector(512)")
+	@Column(name = "style_vector", columnDefinition = "vector(384)")
 	private float[] styleVector;
 
 	public static Team create(
@@ -102,9 +104,5 @@ public class Team extends BaseEntity {
 
 	public void updateWinRate(double winRate) {
 		this.winRate = winRate;
-	}
-
-	public void updateStyleVector(float[] styleVector) {
-		this.styleVector = styleVector;
 	}
 }
