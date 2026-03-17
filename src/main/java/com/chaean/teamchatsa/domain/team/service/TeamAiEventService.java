@@ -1,7 +1,6 @@
 package com.chaean.teamchatsa.domain.team.service;
 
 import com.chaean.teamchatsa.domain.team.event.TeamReviewCreatedEvent;
-import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamReview;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamReviewRepository;
@@ -11,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,23 +53,33 @@ public class TeamAiEventService {
 				""", combinedReviews);
 
 		// 팀 스타일 요약 생성
-		String summary = chatModel.call(prompt);
+		String summary = chatModel.call(new Prompt(prompt)).getResult().getOutput().getText();
 		log.debug("[AI] 팀 스타일 요약 완료: {}", summary);
 
 		// 팀 스타일 임베딩 벡터 생성
 		float[] styleVector = embeddingModel.embed(summary);
 		log.debug("[AI] 임베딩 벡터 생성 완료 (Dimension: {})", styleVector.length);
 
-		// 스타일 벡터 반영 대상 팀 조회
-		Team team = teamRepository.findById(teamId)
-				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND);
+		// 스타일 벡터 반영 대상 팀 존재 여부 확인
+		if (!teamRepository.existsById(teamId)) {
+			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
+		}
 
-		// 팀 엔티티 스타일 벡터 갱신
-		team.updateStyleVector(styleVector);
-
-		// 갱신된 팀 스타일 벡터 저장
-		teamRepository.save(team);
+		// pgvector 리터럴 문자열로 변환 후 저장
+		teamRepository.updateStyleVector(teamId, toVectorLiteral(styleVector));
 
 		log.info("[AI] 팀 스타일 벡터 갱신 완료 - TeamId: {}", teamId);
+	}
+
+	private String toVectorLiteral(float[] styleVector) {
+		StringBuilder builder = new StringBuilder("[");
+		for (int i = 0; i < styleVector.length; i++) {
+			if (i > 0) {
+				builder.append(',');
+			}
+			builder.append(styleVector[i]);
+		}
+		builder.append(']');
+		return builder.toString();
 	}
 }
