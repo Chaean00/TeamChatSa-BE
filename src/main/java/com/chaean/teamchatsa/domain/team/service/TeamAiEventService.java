@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.domain.team.service;
 
 import com.chaean.teamchatsa.domain.team.event.TeamReviewCreatedEvent;
+import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamReview;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamReviewRepository;
@@ -60,26 +61,12 @@ public class TeamAiEventService {
 		float[] styleVector = embeddingModel.embed(summary);
 		log.debug("[AI] 임베딩 벡터 생성 완료 (Dimension: {})", styleVector.length);
 
-		// 스타일 벡터 반영 대상 팀 존재 여부 확인
-		if (!teamRepository.existsById(teamId)) {
-			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
-		}
+		// 팀 styleVector 업데이트
+		Team team = teamRepository.findById(teamId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
 
-		// pgvector 리터럴 문자열로 변환 후 저장
-		teamRepository.updateStyleVector(teamId, toVectorLiteral(styleVector));
+		team.updateStyleVector(styleVector);
 
 		log.info("[AI] 팀 스타일 벡터 갱신 완료 - TeamId: {}", teamId);
-	}
-
-	private String toVectorLiteral(float[] styleVector) {
-		StringBuilder builder = new StringBuilder("[");
-		for (int i = 0; i < styleVector.length; i++) {
-			if (i > 0) {
-				builder.append(',');
-			}
-			builder.append(styleVector[i]);
-		}
-		builder.append(']');
-		return builder.toString();
 	}
 }

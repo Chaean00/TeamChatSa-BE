@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -75,8 +76,9 @@ public class Team extends BaseEntity {
 	@Column(name = "img")
 	private String img;
 
-	@JdbcTypeCode(SqlTypes.VECTOR)
 	@Column(name = "style_vector", columnDefinition = "vector(384)")
+	@JdbcTypeCode(SqlTypes.VECTOR)
+	@Array(length = 384)
 	private float[] styleVector;
 
 	public static Team create(
@@ -104,5 +106,9 @@ public class Team extends BaseEntity {
 
 	public void updateWinRate(double winRate) {
 		this.winRate = winRate;
+	}
+
+	public void updateStyleVector(float[] styleVector) {
+		this.styleVector = styleVector;
 	}
 }
