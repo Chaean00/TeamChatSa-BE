@@ -49,8 +49,7 @@ public class MatchRecommendationService {
 		MatchSearchIntent intent = matchSearchIntentParser.parse(myTeam, normalizedQuery);
 
 		// AI가 추출한 스타일 키워드만 임베딩으로 변환
-		float[] queryVector = embeddingModel.embed(intent.getVectorKeyword());
-		log.info("AI가 추출한 스타일 키워드: {}, 벡터 Dimension: {}", intent.getVectorKeyword(), queryVector.length);
+		float[] queryVector = createQueryEmbedding(intent.getVectorKeyword());
 
 		// exact filter와 vector search를 결합해 추천 후보를 조회
 		List<MatchRecommendationCandidate> candidates = matchPostRepository.findRecommendedMatches(
@@ -126,5 +125,17 @@ public class MatchRecommendationService {
 		}
 		builder.append(']');
 		return builder.toString();
+	}
+
+	private float[] createQueryEmbedding(String keyword) {
+		try {
+			float[] vector = embeddingModel.embed(keyword);
+			log.info("AI 키워드: {}, vector dimension: {}", keyword, vector.length);
+
+			return vector;
+		} catch (Exception e) {
+			log.error("임베딩 생성 실패", e);
+			throw new BusinessException(ErrorCode.EMBEDDING_FAILURE, "검색어 임베딩 생성에 실패했습니다.");
+		}
 	}
 }
