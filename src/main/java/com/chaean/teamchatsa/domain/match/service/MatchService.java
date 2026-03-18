@@ -152,11 +152,7 @@ public class MatchService {
 	}
 
 	private Slice<MatchPostListResponse> fetchMatchPostsDatabase(MatchPostSearchRequest req) {
-		Sort sort = Sort.by(
-				Sort.Order.asc("matchDate"),
-				Sort.Order.desc("id")
-		);
-		Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), sort);
+		Pageable pageable = PageRequest.of(req.getPage(), req.getSize());
 		return matchPostRepo.findMatchPostsWithPagination(req, pageable);
 	}
 
