@@ -15,7 +15,7 @@ public interface MatchLocationProjection {
 
 	String getTeamName();
 
-	String getLevel();
+	Integer getLevel();
 
 	Double getLat();
 

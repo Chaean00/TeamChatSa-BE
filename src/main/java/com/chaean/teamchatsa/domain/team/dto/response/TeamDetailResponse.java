@@ -19,10 +19,12 @@ public class TeamDetailResponse {
 	private String img;
 	private String description;
 	private Long memberCount;
-	private TeamLevel level;
+	private Integer level;
+	private String levelLabel;
 	private TeamRole userRole;
 
 	public static TeamDetailResponse fromEntity(Team team, TeamRole userRole, Long memberCount) {
+		TeamLevel level = team.getLevel();
 		return new TeamDetailResponse(
 				team.getId(),
 				team.getLeaderUserId(),
@@ -31,7 +33,8 @@ public class TeamDetailResponse {
 				team.getImg(),
 				team.getDescription(),
 				memberCount,
-				team.getLevel(),
+				level != null ? level.getValue() : null,
+				level != null ? level.getDescription() : null,
 				userRole
 		);
 	}
