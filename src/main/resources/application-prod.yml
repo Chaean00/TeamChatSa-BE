@@ -46,8 +46,8 @@ app:
   jwt:
     secret: ${JWT_SECRET}
   auth:
-    redirect-success: http://localhost:3000/auth/kakao/callback
-    redirect-failure: http://localhost:3000/auth/kakao/failure
+    redirect-success: ${APP_AUTH_REDIRECT_SUCCESS}
+    redirect-failure: ${APP_AUTH_REDIRECT_FAILURE}
 
 gcp:
   storage:
