@@ -15,6 +15,7 @@ permissions:
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/teamchatsa
   IMAGE_TAG: ${{ github.sha }}
+  COMPOSE_PROJECT_NAME: teamchatsa-app
 
 jobs:
   deploy:
@@ -65,7 +66,8 @@ jobs:
             test -f .env
             export DOCKER_IMAGE='${{ env.DOCKER_IMAGE }}'
             export IMAGE_TAG='${{ env.IMAGE_TAG }}'
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml down || true
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            export COMPOSE_PROJECT_NAME='${{ env.COMPOSE_PROJECT_NAME }}'
+            docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.prod.yml pull
+            docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.prod.yml down || true
+            docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f

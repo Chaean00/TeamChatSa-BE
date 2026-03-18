@@ -1,3 +1,5 @@
+name: teamchatsa-app
+
 services:
   app:
     image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
