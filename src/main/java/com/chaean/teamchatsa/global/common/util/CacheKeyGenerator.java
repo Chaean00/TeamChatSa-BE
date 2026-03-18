@@ -34,9 +34,9 @@ public class CacheKeyGenerator {
 	/**
 	 * 캐싱 대상인지 판단
 	 * 1. 필터 X                         → 0-9 페이지
-	 * 2. 필터 headCount=11              → 0-4 페이지
-	 * 3. 필터 region=서울                → 0-4 페이지
-	 * 4. 필터 headCount=11 + region=서울 → 0-4 페이지
+	 * 2. 필터 headCount in (5, 6, 11)   → 0-5 페이지
+	 * 3. 필터 region=서울                → 0-5 페이지
+	 * 4. 필터 headCount in (5, 6, 11) + region=서울 → 0-5 페이지
 	 */
 	public boolean isCacheable(MatchPostSearchRequest req) {
 		// 날짜 필터가 있으면 캐싱 제외
@@ -46,7 +46,8 @@ public class CacheKeyGenerator {
 
 		boolean hasHeadCount = req.getHeadCount() != null;
 		boolean hasRegion = req.getRegion() != null && !req.getRegion().isBlank();
-		boolean isHeadCount11 = hasHeadCount && req.getHeadCount() == 11;
+		boolean isPreferredHeadCount = hasHeadCount
+				&& (req.getHeadCount() == 5 || req.getHeadCount() == 6 || req.getHeadCount() == 11);
 		boolean isRegionSeoul = hasRegion && "서울".equals(req.getRegion());
 
 		// 필터 X → 0-9 페이지
@@ -54,19 +55,19 @@ public class CacheKeyGenerator {
 			return req.getPage() >= 0 && req.getPage() <= 9;
 		}
 
-		// 필터 headCount=11
-		if (isHeadCount11 && !hasRegion) {
-			return req.getPage() >= 0 && req.getPage() <= 4;
+		// 필터 headCount in (5, 6, 11)
+		if (isPreferredHeadCount && !hasRegion) {
+			return req.getPage() >= 0 && req.getPage() <= 5;
 		}
 
 		// 필터 region=서울
 		if (!hasHeadCount && isRegionSeoul) {
-			return req.getPage() >= 0 && req.getPage() <= 4;
+			return req.getPage() >= 0 && req.getPage() <= 5;
 		}
 
-		// 필터 headCount=11 + region=서울
-		if (isHeadCount11 && isRegionSeoul) {
-			return req.getPage() >= 0 && req.getPage() <= 4;
+		// 필터 headCount in (5, 6, 11) + region=서울
+		if (isPreferredHeadCount && isRegionSeoul) {
+			return req.getPage() >= 0 && req.getPage() <= 5;
 		}
 
 		return false;
