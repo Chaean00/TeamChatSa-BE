@@ -74,6 +74,10 @@ public class MatchPost extends BaseEntity {
 	@Column(name = "address", nullable = false, length = 255)
 	private String address;
 
+	@NotNull
+	@Column(name = "region", nullable = false, length = 10)
+	private String region;
+
 	@Size(max = 120)
 	@Column(name = "place_name", length = 120)
 	private String placeName;
@@ -96,8 +100,69 @@ public class MatchPost extends BaseEntity {
 				.lat(lat)
 				.lng(lng)
 				.address(address)
+				.region(normalizeRegion(address))
 				.placeName(placeName)
 				.build();
+	}
+
+	private static String normalizeRegion(String address) {
+		if (address == null || address.isBlank()) {
+			return "기타";
+		}
+
+		if (address.startsWith("서울특별시") || address.startsWith("서울")) {
+			return "서울";
+		}
+		if (address.startsWith("경기도") || address.startsWith("경기")) {
+			return "경기";
+		}
+		if (address.startsWith("인천광역시") || address.startsWith("인천")) {
+			return "인천";
+		}
+		if (address.startsWith("부산광역시") || address.startsWith("부산")) {
+			return "부산";
+		}
+		if (address.startsWith("대구광역시") || address.startsWith("대구")) {
+			return "대구";
+		}
+		if (address.startsWith("대전광역시") || address.startsWith("대전")) {
+			return "대전";
+		}
+		if (address.startsWith("광주광역시") || address.startsWith("광주")) {
+			return "광주";
+		}
+		if (address.startsWith("울산광역시") || address.startsWith("울산")) {
+			return "울산";
+		}
+		if (address.startsWith("세종특별자치시") || address.startsWith("세종")) {
+			return "세종";
+		}
+		if (address.startsWith("강원특별자치도") || address.startsWith("강원도") || address.startsWith("강원")) {
+			return "강원";
+		}
+		if (address.startsWith("충청북도") || address.startsWith("충북")) {
+			return "충북";
+		}
+		if (address.startsWith("충청남도") || address.startsWith("충남")) {
+			return "충남";
+		}
+		if (address.startsWith("전북특별자치도") || address.startsWith("전라북도") || address.startsWith("전북")) {
+			return "전북";
+		}
+		if (address.startsWith("전라남도") || address.startsWith("전남")) {
+			return "전남";
+		}
+		if (address.startsWith("경상북도") || address.startsWith("경북")) {
+			return "경북";
+		}
+		if (address.startsWith("경상남도") || address.startsWith("경남")) {
+			return "경남";
+		}
+		if (address.startsWith("제주특별자치도") || address.startsWith("제주")) {
+			return "제주";
+		}
+
+		return "기타";
 	}
 
 	public void updateStatus(MatchPostStatus status) {

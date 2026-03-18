@@ -73,7 +73,9 @@ class TeamServiceTest {
 		void success() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
+			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("level", 3)
+					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
 			given(teamRepo.existsByName(req.getName())).willReturn(false);
 
@@ -90,7 +92,9 @@ class TeamServiceTest {
 		void fail_already_joined() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
+			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("level", 3)
+					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(true);
 
 			// when
@@ -105,7 +109,9 @@ class TeamServiceTest {
 		void fail_duplicate_team_name() {
 			// given
 			Long userId = 1L;
-			TeamCreateRequest req = fixtureMonkey.giveMeOne(TeamCreateRequest.class);
+			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("level", 3)
+					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
 			given(teamRepo.existsByName(req.getName())).willReturn(true);
 
@@ -114,6 +120,23 @@ class TeamServiceTest {
 			assertThatThrownBy(() -> teamService.registerTeam(userId, req))
 					.isInstanceOf(BusinessException.class)
 					.hasMessageContaining("이미 존재하는 팀명입니다.");
+		}
+
+		@Test
+		@DisplayName("실패 - 유효하지 않은 팀 레벨")
+		void fail_invalid_team_level() {
+			// given
+			Long userId = 1L;
+			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("level", 99)
+					.sample();
+			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
+			given(teamRepo.existsByName(req.getName())).willReturn(false);
+
+			// when
+			// then
+			assertThatThrownBy(() -> teamService.registerTeam(userId, req))
+					.isInstanceOf(BusinessException.class);
 		}
 	}
 
@@ -128,13 +151,13 @@ class TeamServiceTest {
 			int page = 0;
 			int size = 10;
 			String teamName = null;
+			Integer level = null;
 			Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
 			Slice<TeamListResponse> sliceFromRepo = new SliceImpl<>(Collections.emptyList());
-			// teamName이 null이면 findTeamListByNameWithPagination 호출
-			given(teamRepo.findTeamListWithPagination(pageable)).willReturn(sliceFromRepo);
+			given(teamRepo.findTeamListWithPagination(pageable, level)).willReturn(sliceFromRepo);
 
 			// when
-			SliceResponse<TeamListResponse> result = teamService.findTeamList(page, size, teamName);
+			SliceResponse<TeamListResponse> result = teamService.findTeamList(page, size, teamName, level);
 
 			// then
 			assertThat(result.getContent()).isEmpty();
@@ -148,13 +171,13 @@ class TeamServiceTest {
 			int page = 0;
 			int size = 10;
 			String teamName = "테스트팀";
+			Integer level = 3;
 			Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
 			Slice<TeamListResponse> sliceFromRepo = new SliceImpl<>(Collections.emptyList());
-			// teamName이 있으면 findTeamListWithPagination 호출
-			given(teamRepo.findTeamListByNameWithPagination(pageable, teamName)).willReturn(sliceFromRepo);
+			given(teamRepo.findTeamListByNameWithPagination(pageable, teamName, level)).willReturn(sliceFromRepo);
 
 			// when
-			SliceResponse<TeamListResponse> result = teamService.findTeamList(page, size, teamName);
+			SliceResponse<TeamListResponse> result = teamService.findTeamList(page, size, teamName, level);
 
 			// then
 			assertThat(result.getContent()).isEmpty();
@@ -186,6 +209,8 @@ class TeamServiceTest {
 
 			// then
 			assertThat(result.getName()).isEqualTo(team.getName());
+			assertThat(result.getLevel()).isEqualTo(team.getLevel().getValue());
+			assertThat(result.getLevelLabel()).isEqualTo(team.getLevel().getDescription());
 			assertThat(result.getUserRole()).isEqualTo(TeamRole.LEADER);
 		}
 
@@ -206,6 +231,8 @@ class TeamServiceTest {
 
 			// then
 			assertThat(result.getName()).isEqualTo(team.getName());
+			assertThat(result.getLevel()).isEqualTo(team.getLevel().getValue());
+			assertThat(result.getLevelLabel()).isEqualTo(team.getLevel().getDescription());
 			assertThat(result.getUserRole()).isNull();
 		}
 

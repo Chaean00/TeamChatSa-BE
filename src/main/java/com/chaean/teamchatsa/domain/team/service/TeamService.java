@@ -11,6 +11,7 @@ import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
+import com.chaean.teamchatsa.domain.team.model.TeamLevel;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamJoinRequestRepository;
@@ -60,6 +61,8 @@ public class TeamService {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 팀명입니다.");
 		}
 
+		TeamLevel level = TeamLevel.fromValue(req.getLevel());
+
 		Team team = Team.create(
 				userId,
 				req.getName(),
@@ -67,7 +70,7 @@ public class TeamService {
 				req.getDescription(),
 				req.getContactType(),
 				req.getContact(),
-				req.getLevel(),
+				level,
 				req.getImgUrl()
 		);
 
@@ -83,13 +86,13 @@ public class TeamService {
 	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<TeamListResponse> findTeamList(int page, int size, String teamName) {
+	public SliceResponse<TeamListResponse> findTeamList(int page, int size, String teamName, Integer level) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
 		if (teamName == null || teamName.isBlank()) {
-			return SliceResponse.from(teamRepo.findTeamListWithPagination(pageable));
+			return SliceResponse.from(teamRepo.findTeamListWithPagination(pageable, level));
 		} else {
-			return SliceResponse.from(teamRepo.findTeamListByNameWithPagination(pageable, teamName));
+			return SliceResponse.from(teamRepo.findTeamListByNameWithPagination(pageable, teamName, level));
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.match.dto.response;
 
+import com.chaean.teamchatsa.domain.team.model.TeamLevel;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -17,7 +18,8 @@ public class MatchMapResponse {
 	private LocalDate matchDate;
 	private LocalTime matchTime;
 	private String teamName;
-	private String teamLevel;
+	private Integer teamLevel;
+	private String teamLevelLabel;
 	private Double lat;
 	private Double lng;
 
@@ -25,7 +27,7 @@ public class MatchMapResponse {
 			String title,
 			LocalDateTime matchDateTime,
 			String teamName,
-			String teamLevel,
+			Integer teamLevel,
 			Double lat,
 			Double lng
 	) {
@@ -35,6 +37,7 @@ public class MatchMapResponse {
 		this.matchTime = matchDateTime.toLocalTime();
 		this.teamName = teamName;
 		this.teamLevel = teamLevel;
+		this.teamLevelLabel = teamLevel != null ? TeamLevel.fromValue(teamLevel).getDescription() : null;
 		this.lat = lat;
 		this.lng = lng;
 	}

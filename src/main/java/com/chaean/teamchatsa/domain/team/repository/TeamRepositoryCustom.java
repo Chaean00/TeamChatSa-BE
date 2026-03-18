@@ -9,10 +9,10 @@ public interface TeamRepositoryCustom {
 	/**
 	 * 팀 목록 조회 (커서 기반 페이징)
 	 */
-	Slice<TeamListResponse> findTeamListWithPagination(Pageable pageable);
+	Slice<TeamListResponse> findTeamListWithPagination(Pageable pageable, Integer level);
 
 	/**
 	 * 팀 목록 조회 (이름 검색
 	 */
-	Slice<TeamListResponse> findTeamListByNameWithPagination(Pageable pageable, String teamName);
+	Slice<TeamListResponse> findTeamListByNameWithPagination(Pageable pageable, String teamName, Integer level);
 }

@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.match.dto.response;
 
+import com.chaean.teamchatsa.domain.team.model.TeamLevel;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -24,7 +25,8 @@ public class MatchPostDetailResponse {
 	private LocalTime matchTime;
 	private String teamName;
 	private String teamImg;
-	private String teamLevel;
+	private Integer teamLevel;
+	private String teamLevelLabel;
 
 	public MatchPostDetailResponse(Long postId,
 			Long teamId,
@@ -37,7 +39,7 @@ public class MatchPostDetailResponse {
 			LocalDateTime matchDateTime,
 			String teamName,
 			String teamImg,
-			String teamLevel) {
+			TeamLevel teamLevel) {
 		this.postId = postId;
 		this.teamId = teamId;
 		this.title = title;
@@ -50,6 +52,7 @@ public class MatchPostDetailResponse {
 		this.matchTime = matchDateTime.toLocalTime();
 		this.teamName = teamName;
 		this.teamImg = teamImg;
-		this.teamLevel = teamLevel;
+		this.teamLevel = teamLevel != null ? teamLevel.getValue() : null;
+		this.teamLevelLabel = teamLevel != null ? teamLevel.getDescription() : null;
 	}
 }

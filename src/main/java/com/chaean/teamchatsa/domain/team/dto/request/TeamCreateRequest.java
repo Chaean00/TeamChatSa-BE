@@ -1,8 +1,9 @@
 package com.chaean.teamchatsa.domain.team.dto.request;
 
 import com.chaean.teamchatsa.domain.team.model.ContactType;
-import com.chaean.teamchatsa.domain.team.model.TeamLevel;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +30,7 @@ public class TeamCreateRequest {
 	private String imgUrl;
 
 	@NotNull
-	private TeamLevel level;
+	@Min(1)
+	@Max(7)
+	private Integer level;
 }
