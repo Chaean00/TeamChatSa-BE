@@ -38,7 +38,7 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 				AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
 				AND (CAST(:endDate AS date) IS NULL OR mp.match_date < CAST(:endDate AS timestamp) + INTERVAL '1 day')
 				AND (:headCount IS NULL OR mp.head_count = :headCount)
-				AND (:region IS NULL OR mp.address LIKE CONCAT(:region, '%'))
+				AND (:region IS NULL OR mp.region = :region)
 			ORDER BY
 				mp.match_date ASC, mp.id DESC
 			""", nativeQuery = true)
@@ -78,7 +78,7 @@ public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, Mat
 				AND t.style_vector IS NOT NULL
 				AND t.level IN (:levels)
 				AND t.win_rate BETWEEN :minWinRate AND :maxWinRate
-				AND (:region IS NULL OR mp.address LIKE CONCAT(:region, '%'))
+				AND (:region IS NULL OR mp.region = :region)
 			ORDER BY
 				t.style_vector <=> CAST(:queryVector AS vector),
 				mp.match_date ASC,

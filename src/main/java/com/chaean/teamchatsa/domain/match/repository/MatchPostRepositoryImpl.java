@@ -86,7 +86,7 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 			builder.and(mp.headCount.eq(headCount));
 		}
 		if (StringUtils.hasText(region)) {
-			builder.and(mp.address.like(region + "%"));
+			builder.and(mp.region.eq(region));
 		}
 
 		return builder;
