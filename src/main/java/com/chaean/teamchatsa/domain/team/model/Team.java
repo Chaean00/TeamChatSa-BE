@@ -1,55 +1,114 @@
 package com.chaean.teamchatsa.domain.team.model;
 
-import com.chaean.teamchatsa.global.common.model.DeleteAndTimeEntity;
-import jakarta.persistence.*;
+import com.chaean.teamchatsa.domain.team.converter.TeamLevelConverter;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Table(name = "team")
-public class Team extends DeleteAndTimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+public class Team extends BaseEntity {
 
-    @NotNull
-    @Column(name = "leader_user_id", nullable = false)
-    private Long leaderUserId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", nullable = false)
+	private Long id;
 
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "name", nullable = false, length = 50)
-    private String name;
+	@NotNull
+	@Column(name = "leader_user_id", nullable = false)
+	private Long leaderUserId;
 
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "area", nullable = false, length = 50)
-    private String area;
+	@Size(max = 50)
+	@NotNull
+	@Column(name = "name", nullable = false, length = 50)
+	private String name;
 
-    @Column(name = "description")
-    private String description;
+	@Size(max = 50)
+	@NotNull
+	@Column(name = "area", nullable = false, length = 50)
+	private String area;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "contact_type", nullable = false, length = 30)
-    private ContactType contactType;
+	@Column(name = "description")
+	private String description;
 
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "contact", nullable = false, length = 50)
-    private String contact;
+	@Enumerated(EnumType.STRING)
+	@NotNull
+	@Column(name = "contact_type", nullable = false, length = 30)
+	private ContactType contactType;
 
-    @NotNull
-    @Column(name = "level", nullable = false, length = 20)
-    private String level;
+	@Size(max = 50)
+	@NotNull
+	@Column(name = "contact", nullable = false, length = 50)
+	private String contact;
 
-    @Size(max = 255)
-    @Column(name = "img")
-    private String img;
+	@NotNull
+	@Convert(converter = TeamLevelConverter.class)
+	@Column(name = "level", nullable = false)
+	private TeamLevel level;
+
+	@Builder.Default
+	@NotNull
+	@Column(name = "win_rate", nullable = false)
+	private Double winRate = 0.0;
+
+	@Size(max = 255)
+	@Column(name = "img")
+	private String img;
+
+	@Column(name = "style_vector", columnDefinition = "vector(384)")
+	@JdbcTypeCode(SqlTypes.VECTOR)
+	@Array(length = 384)
+	private float[] styleVector;
+
+	public static Team create(
+			Long leaderUserId,
+			String name,
+			String area,
+			String description,
+			ContactType contactType,
+			String contact,
+			TeamLevel level,
+			String img
+	) {
+		return Team.builder()
+				.leaderUserId(leaderUserId)
+				.name(name)
+				.area(area)
+				.description(description)
+				.contactType(contactType)
+				.contact(contact)
+				.level(level)
+				.img(img)
+				.winRate(0.0)
+				.build();
+	}
+
+	public void updateWinRate(double winRate) {
+		this.winRate = winRate;
+	}
+
+	public void updateStyleVector(float[] styleVector) {
+		this.styleVector = styleVector;
+	}
 }

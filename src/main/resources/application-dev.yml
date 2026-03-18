@@ -1,0 +1,71 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+      embedding:
+        api-key: ${OPENAI_API_KEY}
+        options:
+          model: text-embedding-3-small
+          dimensions: 384
+          encodingFormat: float
+
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      credentials:
+        encoded-key: ${GCP_STORAGE_CREDENTIALS:}
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: app
+        format_sql: true
+
+  flyway:
+    schemas: app
+    default-schema: app
+    create-schemas: true
+    baseline-on-migrate: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  auth:
+    redirect-success: http://localhost:3000/auth/kakao/callback
+    redirect-failure: http://localhost:3000/auth/kakao/failure
+
+gcp:
+  storage:
+    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
+    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: DEBUG
+    com.chaean.teamchatsa: DEBUG
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:}
+    enabled: ${SLACK_ALERT_ENABLED:true}
+  alert:
+    channel: "#alert"
+    username: "TeamChatSa Bot"
+    icon-emoji: ":rotating_light:"

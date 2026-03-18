@@ -1,12 +1,13 @@
 package com.chaean.teamchatsa.global.common.dto;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
-/** 페이지 번호가 존재하는 페이지 응답 DTO */
+/**
+ * 페이지 번호가 존재하는 페이지 응답 DTO
+ */
 @Getter
 @Builder
 public class PageResponse<T> {

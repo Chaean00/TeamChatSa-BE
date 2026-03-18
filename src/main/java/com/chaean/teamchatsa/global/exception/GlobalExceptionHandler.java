@@ -4,6 +4,8 @@ import com.chaean.teamchatsa.global.common.dto.ApiResponse;
 import com.chaean.teamchatsa.infra.slack.SlackAlertService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,9 +17,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 @Slf4j
 @RestControllerAdvice
@@ -78,9 +77,15 @@ public class GlobalExceptionHandler {
 		String msg = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
 
 		if (msg.contains("Duplicate entry") || msg.contains("unique constraint") || msg.contains("Unique index")) {
-			if (msg.contains("nickname")) return "이미 사용 중인 닉네임입니다.";
-			if (msg.contains("email")) return "이미 등록된 이메일입니다.";
-			if (msg.contains("team_member_unique")) return "이미 해당 팀에 가입되어 있습니다.";
+			if (msg.contains("nickname")) {
+				return "이미 사용 중인 닉네임입니다.";
+			}
+			if (msg.contains("email")) {
+				return "이미 등록된 이메일입니다.";
+			}
+			if (msg.contains("team_member_unique")) {
+				return "이미 해당 팀에 가입되어 있습니다.";
+			}
 			return "중복된 데이터가 존재합니다.";
 		}
 

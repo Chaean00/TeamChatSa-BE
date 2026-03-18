@@ -1,8 +1,8 @@
 package com.chaean.teamchatsa.domain.match.repository;
 
-import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchRequest;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
 import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
 import com.chaean.teamchatsa.domain.match.model.QMatchPost;
 import com.chaean.teamchatsa.domain.team.model.QTeam;
@@ -10,6 +10,10 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +23,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-/** MatchPost QueryDSL 구현체 */
+/**
+ * MatchPost QueryDSL 구현체
+ */
 @Slf4j
 @Repository
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Slice<MatchPostListRes> findMatchPostsWithPagination(MatchPostSearchReq searchReq, Pageable pageable) {
+	public Slice<MatchPostListResponse> findMatchPostsWithPagination(MatchPostSearchRequest searchReq, Pageable pageable) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
 
@@ -43,9 +44,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 				searchReq.getHeadCount(), searchReq.getRegion(), mp
 		);
 
-		List<MatchPostListRes> content = queryFactory
+		List<MatchPostListResponse> content = queryFactory
 				.select(Projections.constructor(
-						MatchPostListRes.class,
+						MatchPostListResponse.class,
 						mp.id,
 						mp.title,
 						mp.placeName,
@@ -57,9 +58,8 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						mp.headCount
 				))
 				.from(mp)
-				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
+				.leftJoin(t).on(t.id.eq(mp.teamId))
 				.where(
-						mp.isDeleted.isFalse(),
 						mp.status.eq(MatchPostStatus.OPEN),
 						mp.matchDate.goe(LocalDateTime.now()),
 						filterCondition
@@ -73,7 +73,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 		return createSlice(content, pageable);
 	}
 
-	/** 검색 조건 필터 빌드 */
+	/**
+	 * 검색 조건 필터 빌드
+	 */
 	private BooleanBuilder buildFilterCondition(LocalDate startDate, LocalDate endDate, Integer headCount, String region, QMatchPost mp) {
 		BooleanBuilder builder = new BooleanBuilder();
 
@@ -94,13 +96,13 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	}
 
 	@Override
-	public Slice<MatchPostListRes> findMatchPostsByTeamId(Long teamId, Pageable pageable) {
+	public Slice<MatchPostListResponse> findMatchPostsByTeamId(Long teamId, Pageable pageable) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
 
-		List<MatchPostListRes> content = queryFactory
+		List<MatchPostListResponse> content = queryFactory
 				.select(Projections.constructor(
-						MatchPostListRes.class,
+						MatchPostListResponse.class,
 						mp.id,
 						mp.title,
 						mp.placeName,
@@ -112,10 +114,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 						mp.headCount
 				))
 				.from(mp)
-				.leftJoin(t).on(t.id.eq(mp.teamId).and(t.isDeleted.eq(false)))
+				.leftJoin(t).on(t.id.eq(mp.teamId))
 				.where(
 						mp.teamId.eq(teamId)
-								.and(mp.isDeleted.eq(false))
 				)
 				.orderBy(mp.createdAt.desc(), mp.id.desc())
 				.offset(pageable.getOffset())
@@ -127,13 +128,13 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 	}
 
 	@Override
-	public MatchPostDetailRes findMatchPostDetailById(Long matchId) {
+	public MatchPostDetailResponse findMatchPostDetailById(Long matchId) {
 		QMatchPost mp = QMatchPost.matchPost;
 		QTeam t = QTeam.team;
 
-		MatchPostDetailRes content = queryFactory
+		MatchPostDetailResponse content = queryFactory
 				.select(Projections.constructor(
-						MatchPostDetailRes.class,
+						MatchPostDetailResponse.class,
 						mp.id,
 						mp.teamId,
 						mp.title,
@@ -150,16 +151,16 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 				.from(mp)
 				.leftJoin(t).on(
 						t.id.eq(mp.teamId)
-								.and(t.isDeleted.eq(false))
 				)
-				.where(mp.id.eq(matchId)
-						.and(mp.isDeleted.eq(false)))
+				.where(mp.id.eq(matchId))
 				.fetchOne();
 
 		return content;
 	}
 
-	/** Slice 생성 헬퍼 메서드 */
+	/**
+	 * Slice 생성 헬퍼 메서드
+	 */
 	private <T> Slice<T> createSlice(List<T> content, Pageable pageable) {
 		boolean hasNext = false;
 		if (content.size() > pageable.getPageSize()) {
@@ -169,7 +170,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 		return new SliceImpl<>(content, pageable, hasNext);
 	}
 
-	/** Pageable의 Sort를 QueryDSL OrderSpecifier로 변환하는 헬퍼 메서드 */
+	/**
+	 * Pageable의 Sort를 QueryDSL OrderSpecifier로 변환하는 헬퍼 메서드
+	 */
 	private OrderSpecifier<?>[] getSortOrder(Pageable pageable, QMatchPost mp) {
 		List<OrderSpecifier<?>> orders = new ArrayList<>();
 
@@ -191,7 +194,9 @@ public class MatchPostRepositoryImpl implements MatchPostRepositoryCustom {
 		return orders.toArray(new OrderSpecifier[0]);
 	}
 
-	/** Sort.Order를 OrderSpecifier로 변환 */
+	/**
+	 * Sort.Order를 OrderSpecifier로 변환
+	 */
 	private OrderSpecifier<?> createOrderSpecifier(Sort.Order order, QMatchPost mp) {
 		String property = order.getProperty();
 		boolean isAsc = order.isAscending();

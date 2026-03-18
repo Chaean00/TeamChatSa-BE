@@ -1,14 +1,19 @@
 package com.chaean.teamchatsa.domain.match.service;
 
-import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationReq;
-import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchReq;
-import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateReq;
-import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchReq;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantRes;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchMapRes;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailRes;
-import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListRes;
-import com.chaean.teamchatsa.domain.match.model.*;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchApplicationRequest;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchMapSearchRequest;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostCreateRequest;
+import com.chaean.teamchatsa.domain.match.dto.request.MatchPostSearchRequest;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchMapResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
+import com.chaean.teamchatsa.domain.match.event.MatchApplicationCreatedEvent;
+import com.chaean.teamchatsa.domain.match.event.MatchApplicationProcessedEvent;
+import com.chaean.teamchatsa.domain.match.model.MatchApplication;
+import com.chaean.teamchatsa.domain.match.model.MatchApplicationStatus;
+import com.chaean.teamchatsa.domain.match.model.MatchPost;
+import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
@@ -17,14 +22,16 @@ import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
-import com.chaean.teamchatsa.domain.match.event.MatchApplicationCreatedEvent;
-import com.chaean.teamchatsa.domain.match.event.MatchApplicationProcessedEvent;
 import com.chaean.teamchatsa.global.common.dto.SliceResponse;
 import com.chaean.teamchatsa.global.common.util.CacheKeyGenerator;
 import com.chaean.teamchatsa.global.common.util.RedisCacheUtil;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,16 +43,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MatchService {
 
+	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 	private final MatchPostRepository matchPostRepo;
 	private final MatchApplicationRepository matchApplicationRepo;
 	private final TeamMemberRepository teamMemberRepo;
@@ -54,36 +57,48 @@ public class MatchService {
 	private final RedisCacheUtil cacheUtil;
 	private final CacheKeyGenerator cacheKeyGen;
 
-	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
-
-	/** 매치 게시물 등록 */
+	/**
+	 * 매치 게시물 등록
+	 */
 	@Transactional
 	@Loggable
-	public void registerMatchPost(Long userId, MatchPostCreateReq req) {
+	public void registerMatchPost(Long userId, MatchPostCreateRequest req) {
 		if (req.getMatchDate().isBefore(LocalDateTime.now())) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "매치 날짜는 현재 시각 이후여야 합니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "사용자가 속한 팀이 없습니다.");
 		}
 
-		MatchPost matchPost = req.toEntity(teamId);
+		MatchPost matchPost = MatchPost.create(
+				teamId,
+				req.getTitle(),
+				req.getContent(),
+				req.getHeadCount(),
+				req.getMatchDate(),
+				req.getLat(),
+				req.getLng(),
+				req.getAddress(),
+				req.getPlaceName()
+		);
 		matchPostRepo.save(matchPost);
 
 		// 매치 목록 캐시 무효화
 		deleteMatchPostsCache();
 	}
 
-	/** 매치 게시물 삭제 */
+	/**
+	 * 매치 게시물 삭제
+	 */
 	@Transactional
 	@Loggable
 	public void deleteMatchPost(Long userId, Long matchId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null || !matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 게시물을 삭제할 권한이 없습니다.");
 		}
@@ -93,16 +108,18 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_STATE, "신청이 있는 매치는 삭제할 수 없습니다.");
 		}
 
-		matchPost.softDelete();
+		matchPostRepo.delete(matchPost);
 
 		// 매치 목록 캐시 무효화
 		deleteMatchPostsCache();
 	}
 
-	/** 매치 게시물 목록 조회 */
+	/**
+	 * 매치 게시물 목록 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<MatchPostListRes> findMatchPosts(MatchPostSearchReq req) {
+	public SliceResponse<MatchPostListResponse> findMatchPosts(MatchPostSearchRequest req) {
 		// 캐싱 대상 확인
 		if (!cacheKeyGen.isCacheable(req)) {
 			return SliceResponse.from(fetchMatchPostsDatabase(req));
@@ -112,9 +129,10 @@ public class MatchService {
 		String cacheKey = cacheKeyGen.generateMatchListKey(req);
 
 		// 캐시 조회
-		SliceResponse<MatchPostListRes> cached = cacheUtil.get(
+		SliceResponse<MatchPostListResponse> cached = cacheUtil.get(
 				cacheKey,
-				new TypeReference<SliceResponse<MatchPostListRes>>() {}
+				new TypeReference<SliceResponse<MatchPostListResponse>>() {
+				}
 		);
 
 		if (cached != null) {
@@ -124,8 +142,8 @@ public class MatchService {
 
 		// 캐시 미스 → DB 조회
 		log.info("Cache MISS: {}", cacheKey);
-		Slice<MatchPostListRes> result = fetchMatchPostsDatabase(req);
-		SliceResponse<MatchPostListRes> response = SliceResponse.from(result);
+		Slice<MatchPostListResponse> result = fetchMatchPostsDatabase(req);
+		SliceResponse<MatchPostListResponse> response = SliceResponse.from(result);
 
 		// 캐시 저장
 		cacheUtil.set(cacheKey, response, CACHE_TTL);
@@ -133,7 +151,7 @@ public class MatchService {
 		return response;
 	}
 
-	private Slice<MatchPostListRes> fetchMatchPostsDatabase(MatchPostSearchReq req) {
+	private Slice<MatchPostListResponse> fetchMatchPostsDatabase(MatchPostSearchRequest req) {
 		Sort sort = Sort.by(
 				Sort.Order.asc("matchDate"),
 				Sort.Order.desc("id")
@@ -147,11 +165,13 @@ public class MatchService {
 		cacheUtil.deleteByPattern(pattern);
 	}
 
-	/** 특정 팀의 매치 게시물 목록 조회 */
+	/**
+	 * 특정 팀의 매치 게시물 목록 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public SliceResponse<MatchPostListRes> findMatchPostListByTeamId(Long teamId, int page, int size) {
-		if (!teamRepo.existsByIdAndIsDeletedFalse(teamId)) {
+	public SliceResponse<MatchPostListResponse> findMatchPostListByTeamId(Long teamId, int page, int size) {
+		if (!teamRepo.existsById(teamId)) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
 		}
 
@@ -160,11 +180,13 @@ public class MatchService {
 		return SliceResponse.from(matchPostRepo.findMatchPostsByTeamId(teamId, pageable));
 	}
 
-	/** 매치 게시물 상세 조회 */
+	/**
+	 * 매치 게시물 상세 조회
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public MatchPostDetailRes findMatchPostDetail(Long matchId) {
-		MatchPostDetailRes content = matchPostRepo.findMatchPostDetailById(matchId);
+	public MatchPostDetailResponse findMatchPostDetail(Long matchId) {
+		MatchPostDetailResponse content = matchPostRepo.findMatchPostDetailById(matchId);
 		if (content == null) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
 		}
@@ -172,18 +194,20 @@ public class MatchService {
 		return content;
 	}
 
-	/** 매치 신청 */
+	/**
+	 * 매치 신청
+	 */
 	@Transactional
 	@Loggable
-	public void registerMatchApplication(Long userId, Long matchId, MatchApplicationReq req) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+	public void registerMatchApplication(Long userId, Long matchId, MatchApplicationRequest req) {
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
 		if (matchPost.getStatus() != MatchPostStatus.OPEN) {
 			throw new BusinessException(ErrorCode.INVALID_STATE, "마감된 매치입니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND, "사용자가 속한 팀이 없습니다.");
 		}
@@ -198,14 +222,10 @@ public class MatchService {
 		}
 
 		// 신청 팀 정보 조회
-		Team applicantTeam = teamRepo.findByIdAndIsDeletedFalse(teamId)
+		Team applicantTeam = teamRepo.findById(teamId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "팀을 찾을 수 없습니다."));
 
-		MatchApplication matchApplication = MatchApplication.builder()
-				.postId(matchPost.getId())
-				.applicantTeamId(teamId)
-				.message(req.getMessage())
-				.build();
+		MatchApplication matchApplication = MatchApplication.create(matchPost.getId(), teamId, req.getMessage());
 
 		try {
 			matchApplicationRepo.save(matchApplication);
@@ -226,15 +246,17 @@ public class MatchService {
 		}
 	}
 
-	/** 매치 신청 취소 */
+	/**
+	 * 매치 신청 취소
+	 */
 	@Transactional
 	@Loggable
 	public void deleteMatchApplication(Long userId, Long matchId) {
-		if (!matchPostRepo.existsByIdAndIsDeletedFalse(matchId)) {
+		if (!matchPostRepo.existsById(matchId)) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null) {
 			throw new BusinessException(ErrorCode.TEAM_NOT_FOUND, "사용자가 속한 팀이 없습니다.");
 		}
@@ -250,12 +272,14 @@ public class MatchService {
 		matchApplication.updateStatus(MatchApplicationStatus.CANCELLED);
 	}
 
-	/** 매치 신청 수락 */
+	/**
+	 * 매치 신청 수락
+	 */
 	@DistributedLock(key = "'match:' + #matchId")
 	@Transactional
 	@Loggable
 	public String acceptMatchApplication(Long matchId, Long applicantId, Long userId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
 		if (matchPost.getMatchDate().isBefore(LocalDateTime.now())) {
@@ -266,7 +290,7 @@ public class MatchService {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 마감된 게시물입니다.");
 		}
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (!matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "해당 매치의 팀 멤버가 아닙니다.");
 		}
@@ -291,7 +315,7 @@ public class MatchService {
 			}
 		});
 
-		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
+		Team team = teamRepo.findById(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
 		// 매치 신청 승인 이벤트 발행
@@ -311,14 +335,16 @@ public class MatchService {
 		return team.getName();
 	}
 
-	/** 매치 신청 거절 */
+	/**
+	 * 매치 신청 거절
+	 */
 	@Transactional
 	@Loggable
 	public String rejectMatchApplication(Long matchId, Long applicantId, Long userId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (!matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "권한이 없습니다.");
 		}
@@ -328,7 +354,7 @@ public class MatchService {
 
 		matchApplication.updateStatus(MatchApplicationStatus.REJECTED);
 
-		Team team = teamRepo.findByIdAndIsDeletedFalse(matchApplication.getApplicantTeamId())
+		Team team = teamRepo.findById(matchApplication.getApplicantTeamId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND, "신청한 팀을 찾을 수 없습니다."));
 
 		// 매치 신청 거절 이벤트 발행
@@ -347,11 +373,11 @@ public class MatchService {
 
 	@Transactional(readOnly = true)
 	@Loggable
-	public List<MatchApplicantRes> getMatchApplicants(Long userId, Long matchId) {
-		MatchPost matchPost = matchPostRepo.findByIdAndIsDeletedFalse(matchId)
+	public List<MatchApplicantResponse> getMatchApplicants(Long userId, Long matchId) {
+		MatchPost matchPost = matchPostRepo.findById(matchId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
 
-		Long teamId = teamMemberRepo.findTeamIdByUserIdAndIsDeletedFalse(userId);
+		Long teamId = teamMemberRepo.findTeamIdByUserId(userId);
 		if (teamId == null || !matchPost.getTeamId().equals(teamId)) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "매치 신청 목록을 조회할 권한이 없습니다.");
 		}
@@ -359,10 +385,12 @@ public class MatchService {
 		return matchApplicationRepo.findApplicantsByMatchIdWithTeamInfo(matchId);
 	}
 
-	/** 위치 기반 매치 검색 (BoundingBox + PostGIS) */
+	/**
+	 * 위치 기반 매치 검색 (BoundingBox + PostGIS)
+	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public List<MatchMapRes> searchMatchesByLocation(MatchMapSearchReq req) {
+	public List<MatchMapResponse> searchMatchesByLocation(MatchMapSearchRequest req) {
 		// BoundingBox 순서 검증 (sw < ne)
 		if (req.getSwLat() > req.getNeLat()) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 위도는 북동쪽 위도보다 작아야 합니다.");
@@ -381,15 +409,15 @@ public class MatchService {
 
 		return result.stream()
 				.map(projection ->
-						new MatchMapRes(
-						projection.getId(),
-						projection.getTitle(),
-						projection.getMatchDate(),
-						projection.getTeamName(),
-						projection.getLevel(),
-						projection.getLat(),
-						projection.getLng()
-				))
+						new MatchMapResponse(
+								projection.getId(),
+								projection.getTitle(),
+								projection.getMatchDate(),
+								projection.getTeamName(),
+								projection.getLevel(),
+								projection.getLat(),
+								projection.getLng()
+						))
 				.collect(Collectors.toList());
 	}
 }

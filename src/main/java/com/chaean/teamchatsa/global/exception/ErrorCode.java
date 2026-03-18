@@ -12,6 +12,7 @@ public enum ErrorCode {
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력입니다."),
 	INVALID_STATE(HttpStatus.BAD_REQUEST, "잘못된 상태입니다."),
 	DUPLICATE_RESOURCE(HttpStatus.BAD_REQUEST, "이미 존재하는 자원입니다."),
+	EMBEDDING_FAILURE(HttpStatus.BAD_REQUEST, "임베딩 생성에 실패했습니다."),
 
 	// 401
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

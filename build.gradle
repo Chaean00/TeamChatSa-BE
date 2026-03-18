@@ -22,23 +22,44 @@ configurations {
 
 repositories {
     mavenCentral()
+    // Spring AI
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+    maven {
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
+    }
 }
 
 dependencies {
+    // Spring
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.security:spring-security-crypto'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'com.navercorp.fixturemonkey:fixture-monkey-starter:1.1.0'
+
+    // Postgresql
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation "org.redisson:redisson:3.52.0"
+
+    // Prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // flyway
     implementation 'org.flywaydb:flyway-database-postgresql'
@@ -47,8 +68,6 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-
-    implementation 'org.springframework.security:spring-security-crypto'
 
     // kakao
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -60,11 +79,28 @@ dependencies {
     implementation "io.github.openfeign.querydsl:querydsl-jpa:7.0"
     annotationProcessor "io.github.openfeign.querydsl:querydsl-apt:7.0:jpa"
 
-    // Redisson
-    implementation "org.redisson:redisson:3.52.0"
-
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14'
+
+    // Spring AI BOM
+    implementation platform("org.springframework.ai:spring-ai-bom:1.1.2")
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.hibernate.orm:hibernate-vector:6.6.33.Final'
+}
+
+def generated = layout.buildDirectory.dir("generated/querydsl").get().asFile;
+
+sourceSets {
+    main {
+        java {
+            srcDirs += [generated]
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.getGeneratedSourceOutputDirectory().set(generated)
 }
 
 tasks.named('test') {

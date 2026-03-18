@@ -1,0 +1,25 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
+    container_name: teamchatsa-app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      TZ: ${TZ:-Asia/Seoul}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - teamchatsa-net
+    restart: unless-stopped
+
+networks:
+  teamchatsa-net:
+    external: true
+    name: teamchatsa-net

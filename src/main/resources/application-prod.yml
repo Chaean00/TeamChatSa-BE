@@ -1,0 +1,69 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+      embedding:
+        api-key: ${OPENAI_API_KEY}
+        options:
+          model: text-embedding-3-small
+          dimensions: 384
+          encodingFormat: float
+
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      credentials:
+        encoded-key: ${GCP_STORAGE_CREDENTIALS}
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: app
+
+  flyway:
+    schemas: app
+    default-schema: app
+    create-schemas: true
+    baseline-on-migrate: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  auth:
+    redirect-success: ${APP_AUTH_REDIRECT_SUCCESS}
+    redirect-failure: ${APP_AUTH_REDIRECT_FAILURE}
+
+gcp:
+  storage:
+    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
+    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+
+logging:
+  level:
+    root: INFO
+    com.chaean.teamchatsa: INFO
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL}
+    enabled: ${SLACK_ALERT_ENABLED}
+  alert:
+    channel: "#alert"
+    username: "TeamChatSa Bot"
+    icon-emoji: ":rotating_light:"

@@ -6,6 +6,7 @@ import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.RequireTeamRole;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
@@ -14,11 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-
 /**
- * @RequireTeamRole 어노테이션이 붙은 메서드에 대한 팀 역할 기반 접근 제어를 처리하는 Aspect.
- * SecurityContext에서 userId를 추출하여 사용자의 팀 권한을 검증합니다.
+ * @RequireTeamRole 어노테이션이 붙은 메서드에 대한 팀 역할 기반 접근 제어를 처리하는 Aspect. SecurityContext에서 userId를 추출하여 사용자의 팀 권한을 검증합니다.
  */
 @Slf4j
 @Aspect
@@ -28,14 +26,16 @@ public class TeamRoleAspect {
 
 	private final TeamMemberRepository teamMemberRepository;
 
-	/** @RequireTeamRole 어노테이션이 붙은 메서드 실행 전에 팀 역할을 검증 */
+	/**
+	 * @RequireTeamRole 어노테이션이 붙은 메서드 실행 전에 팀 역할을 검증
+	 */
 	@Before("@annotation(requireTeamRole)")
 	public void checkTeamRole(RequireTeamRole requireTeamRole) {
 		Long userId = getUserIdFromSecurityContext();
 
 		// userId 기준으로 팀 멤버 조회 (전제: 한 유저는 하나의 팀만 가진다)
 		TeamMember teamMember = teamMemberRepository
-				.findByUserIdAndIsDeletedFalse(userId)
+				.findByUserId(userId)
 				.orElseThrow(() -> {
 					log.warn("[권한 검증 실패] 팀에 소속되지 않은 사용자입니다. userId: {}", userId);
 					return new BusinessException(ErrorCode.NOT_TEAM_MEMBER, "팀에 소속되지 않은 사용자입니다.");
@@ -57,7 +57,9 @@ public class TeamRoleAspect {
 		log.info("[팀 권한 검증 성공] userId: {}, 역할: {}", userId, userRole);
 	}
 
-	/** SecurityContext 에서 현재 인증된 사용자의 userId를 추출 */
+	/**
+	 * SecurityContext 에서 현재 인증된 사용자의 userId를 추출
+	 */
 	private Long getUserIdFromSecurityContext() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

@@ -16,36 +16,36 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @EnableCaching
 public class RedisConfig {
 
-    @Value("${spring.data.redis.host}")
-    private String redisHost;
+	@Value("${spring.data.redis.host}")
+	private String redisHost;
 
-    @Value("${spring.data.redis.port}")
-    private int redisPort;
+	@Value("${spring.data.redis.port}")
+	private int redisPort;
 
-    @Value("${spring.data.redis.password:}")
-    private String redisPassword;
+	@Value("${spring.data.redis.password:}")
+	private String redisPassword;
 
-    @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(redisHost, redisPort);
-        if (redisPassword != null && !redisPassword.isBlank()) {
-            redisConfig.setPassword(redisPassword);
-        }
-        log.info("Redis 연결 설정: {}:{}", redisHost, redisPort);
-        return new LettuceConnectionFactory(redisConfig);
-    }
+	@Bean
+	public RedisConnectionFactory redisConnectionFactory() {
+		RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(redisHost, redisPort);
+		if (redisPassword != null && !redisPassword.isBlank()) {
+			redisConfig.setPassword(redisPassword);
+		}
+		log.info("Redis 연결 설정: {}:{}", redisHost, redisPort);
+		return new LettuceConnectionFactory(redisConfig);
+	}
 
-    @Bean
-    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
+	@Bean
+	public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
+		RedisTemplate<String, String> template = new RedisTemplate<>();
+		template.setConnectionFactory(connectionFactory);
 
-        // 간단한 String 직렬화
-        StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(stringSerializer);
+		// 간단한 String 직렬화
+		StringRedisSerializer stringSerializer = new StringRedisSerializer();
+		template.setKeySerializer(stringSerializer);
+		template.setValueSerializer(stringSerializer);
 
-        template.afterPropertiesSet();
-        return template;
-    }
+		template.afterPropertiesSet();
+		return template;
+	}
 }

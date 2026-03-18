@@ -1,26 +1,37 @@
 package com.chaean.teamchatsa.domain.notification.model;
 
-import com.chaean.teamchatsa.global.common.model.TimeEntity;
-import jakarta.persistence.*;
+import com.chaean.teamchatsa.global.common.model.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "notification")
-public class Notification extends TimeEntity {
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE notification SET deleted_at = NOW() WHERE id = ?")
+public class Notification extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	/** 알림 수신자 ID (User ID) */
 	@NotNull
 	@Column(name = "recipient_id", nullable = false)
 	private Long recipientId;
@@ -38,7 +49,6 @@ public class Notification extends TimeEntity {
 	@Column(name = "content", nullable = false, length = 500)
 	private String content;
 
-	/** 관련 링크 (클릭 시 이동할 페이지) */
 	@Column(name = "link", length = 255)
 	private String link;
 
@@ -48,8 +58,18 @@ public class Notification extends TimeEntity {
 	private Boolean isRead = false;
 
 	/**
-	 * 알림을 읽음 처리
+	 * 알림 생성을 위한 정적 팩토리 메서드
 	 */
+	public static Notification create(Long recipientId, NotificationType type, String content, String link) {
+		return Notification.builder()
+				.recipientId(recipientId)
+				.type(type)
+				.title(type.getTitle())
+				.content(content)
+				.link(link)
+				.build();
+	}
+
 	public void markAsRead() {
 		this.isRead = true;
 	}

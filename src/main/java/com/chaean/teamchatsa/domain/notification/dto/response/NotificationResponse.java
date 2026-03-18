@@ -1,0 +1,36 @@
+package com.chaean.teamchatsa.domain.notification.dto.response;
+
+import com.chaean.teamchatsa.domain.notification.model.Notification;
+import com.chaean.teamchatsa.domain.notification.model.NotificationType;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class NotificationResponse {
+
+	private Long id;
+	private NotificationType type;
+	private String title;
+	private String content;
+	private String link;
+	private Boolean isRead;
+	private LocalDateTime createdAt;
+
+	public static NotificationResponse fromEntity(Notification notification) {
+		return NotificationResponse.builder()
+				.id(notification.getId())
+				.type(notification.getType())
+				.title(notification.getTitle())
+				.content(notification.getContent())
+				.link(notification.getLink())
+				.isRead(notification.getIsRead())
+				.createdAt(notification.getCreatedAt())
+				.build();
+	}
+}
