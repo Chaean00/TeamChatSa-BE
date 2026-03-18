@@ -37,8 +37,6 @@ jobs:
           tags: |
             ${{ env.DOCKER_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.DOCKER_IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Copy app docker-compose to server
         uses: appleboy/scp-action@v0.1.7
