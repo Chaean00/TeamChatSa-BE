@@ -49,6 +49,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class MatchService {
 
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
+	private static final int MAP_MARKER_LIMIT = 40;
+	private static final int WIDE_ZOOM_THRESHOLD = 5;
+	private static final double FOCUSED_BBOX_SCALE = 0.4;
 	private final MatchPostRepository matchPostRepo;
 	private final MatchApplicationRepository matchApplicationRepo;
 	private final TeamMemberRepository teamMemberRepo;
@@ -382,38 +385,54 @@ public class MatchService {
 	}
 
 	/**
-	 * 위치 기반 매치 검색 (BoundingBox + PostGIS)
+	 * 위치 기반 매치 검색 (Bounding Box + PostGIS)
 	 */
 	@Transactional(readOnly = true)
 	@Loggable
 	public List<MatchMapResponse> searchMatchesByLocation(MatchMapSearchRequest req) {
-		// BoundingBox 순서 검증 (sw < ne)
-		if (req.getSwLat() > req.getNeLat()) {
+		// 좌표값 검증
+		if (req.getSwLat() >= req.getNeLat()) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 위도는 북동쪽 위도보다 작아야 합니다.");
 		}
-		if (req.getSwLng() > req.getNeLng()) {
+		if (req.getSwLng() >= req.getNeLng()) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "남서쪽 경도는 북동쪽 경도보다 작아야 합니다.");
 		}
 
-		List<MatchLocationProjection> result = matchPostRepo.findMatchPostsByLocation(
-				req.getSwLat(), req.getSwLng(),
-				req.getNeLat(), req.getNeLng(),
+		// 중심 좌표 계산
+		double centerLat = (req.getSwLat() + req.getNeLat()) / 2.0;
+		double centerLng = (req.getSwLng() + req.getNeLng()) / 2.0;
+		double querySwLat = req.getSwLat();
+		double querySwLng = req.getSwLng();
+		double queryNeLat = req.getNeLat();
+		double queryNeLng = req.getNeLng();
+
+		if (req.getZoomLevel() > WIDE_ZOOM_THRESHOLD) {
+			double latHalfSpan = (req.getNeLat() - req.getSwLat()) * FOCUSED_BBOX_SCALE / 2.0;
+			double lngHalfSpan = (req.getNeLng() - req.getSwLng()) * FOCUSED_BBOX_SCALE / 2.0;
+
+			querySwLat = centerLat - latHalfSpan;
+			queryNeLat = centerLat + latHalfSpan;
+			querySwLng = centerLng - lngHalfSpan;
+			queryNeLng = centerLng + lngHalfSpan;
+		}
+
+		List<MatchLocationProjection> result = matchPostRepo.findMatchMarkersByLocation(
+				querySwLat,
+				querySwLng,
+				queryNeLat,
+				queryNeLng,
+				centerLat,
+				centerLng,
 				LocalDateTime.now(),
-				req.getStartDate(), req.getEndDate(),
-				req.getHeadCount(), req.getRegion()
+				req.getStartDate(),
+				req.getEndDate(),
+				req.getHeadCount(),
+				MAP_MARKER_LIMIT
 		);
 
 		return result.stream()
-				.map(projection ->
-						new MatchMapResponse(
-								projection.getId(),
-								projection.getTitle(),
-								projection.getMatchDate(),
-								projection.getTeamName(),
-								projection.getLevel(),
-								projection.getLat(),
-								projection.getLng()
-						))
+				.map(MatchMapResponse::from)
 				.collect(Collectors.toList());
 	}
+
 }
