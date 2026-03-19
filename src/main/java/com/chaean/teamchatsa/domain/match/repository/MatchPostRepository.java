@@ -13,45 +13,64 @@ import org.springframework.data.repository.query.Param;
 public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, MatchPostRepositoryCustom {
 
 	/**
-	 * 지도 기반 매치 검색 PostGIS 공간 인덱스 최적화: && 연산자 + ST_Intersects
+	 * 지도 중심 좌표 기준으로 가까운 marker를 최대 개수만큼 조회한다.
 	 */
 	@Query(value = """
 			SELECT
-				mp.id AS id,
-				mp.title AS title,
-				mp.match_date AS matchDate,
+				limited.id AS id,
+				limited.title AS title,
+				limited.match_date AS matchDate,
 				t.name AS teamName,
 				t.level AS level,
-				mp.lat AS lat,
-				mp.lng AS lng
+				limited.lat AS lat,
+				limited.lng AS lng
 			FROM
-				app.match_post mp
+				(
+					SELECT
+						mp.id,
+						mp.title,
+						mp.match_date,
+						mp.team_id,
+						mp.lat,
+						mp.lng,
+						mp.location <-> ST_SetSRID(ST_MakePoint(:centerLng, :centerLat), 4326) AS distance_score
+					FROM
+						app.match_post mp
+					WHERE
+						mp.deleted_at IS NULL
+						AND mp.status = 'OPEN'
+						AND mp.location && ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
+						AND mp.match_date >= :currentDateTime
+						AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
+						AND (CAST(:endDate AS date) IS NULL OR mp.match_date < CAST(:endDate AS timestamp) + INTERVAL '1 day')
+						AND (:headCount IS NULL OR mp.head_count = :headCount)
+					ORDER BY
+						mp.location <-> ST_SetSRID(ST_MakePoint(:centerLng, :centerLat), 4326) ASC,
+						mp.match_date ASC,
+						mp.id DESC
+					LIMIT :limit
+				) limited
 			LEFT JOIN
 				app.team t
-			    ON t.id = mp.team_id
+			    ON t.id = limited.team_id
 				   AND t.deleted_at IS NULL
-			WHERE
-				mp.deleted_at IS NULL
-				AND mp.status = 'OPEN'				AND mp.location && ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
-				AND ST_Intersects(mp.location, ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326))
-				AND mp.match_date >= :currentDateTime
-				AND (CAST(:startDate AS date) IS NULL OR mp.match_date >= CAST(:startDate AS timestamp))
-				AND (CAST(:endDate AS date) IS NULL OR mp.match_date < CAST(:endDate AS timestamp) + INTERVAL '1 day')
-				AND (:headCount IS NULL OR mp.head_count = :headCount)
-				AND (:region IS NULL OR mp.region = :region)
 			ORDER BY
-				mp.match_date ASC, mp.id DESC
+				limited.distance_score ASC,
+				limited.match_date ASC,
+				limited.id DESC
 			""", nativeQuery = true)
-	List<MatchLocationProjection> findMatchPostsByLocation(
+	List<MatchLocationProjection> findMatchMarkersByLocation(
 			@Param("swLat") Double swLat,
 			@Param("swLng") Double swLng,
 			@Param("neLat") Double neLat,
 			@Param("neLng") Double neLng,
+			@Param("centerLat") Double centerLat,
+			@Param("centerLng") Double centerLng,
 			@Param("currentDateTime") LocalDateTime currentDateTime,
 			@Param("startDate") LocalDate startDate,
 			@Param("endDate") LocalDate endDate,
 			@Param("headCount") Integer headCount,
-			@Param("region") String region
+			@Param("limit") Integer limit
 	);
 
 	@Query(value = """

@@ -98,7 +98,7 @@ public class MatchController {
 		return ResponseEntity.ok(ApiResponse.success("매치 추천 조회 성공", response));
 	}
 
-	@Operation(summary = "위치 기반 매치 검색 API", description = "지도 범위(BoundingBox) 내의 매치 게시물을 검색합니다.")
+	@Operation(summary = "위치 기반 매치 검색 API", description = "줌 레벨에 따라 최대 40개의 marker를 반환합니다.")
 	@GetMapping("/map")
 	public ResponseEntity<ApiResponse<List<MatchMapResponse>>> getMatchesByLocation(
 			@ModelAttribute @Valid MatchMapSearchRequest req
