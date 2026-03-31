@@ -27,12 +27,6 @@ spring:
           dimensions: 384
           encodingFormat: float
 
-  cloud:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}
-      credentials:
-        encoded-key: ${GCP_STORAGE_CREDENTIALS}
-
   jpa:
     show-sql: false
     properties:
@@ -51,11 +45,8 @@ app:
   auth:
     redirect-success: ${APP_AUTH_REDIRECT_SUCCESS}
     redirect-failure: ${APP_AUTH_REDIRECT_FAILURE}
-
-gcp:
-  storage:
-    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
-    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+  upload:
+    base-dir: ${APP_UPLOAD_BASE_DIR}
 
 logging:
   level:

@@ -36,7 +36,7 @@ public class SecurityConfig {
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(HttpMethod.GET, "/api/v1/matches", "/api/v1/teams").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/v1/matches", "/api/v1/teams", "/api/v1/uploads/files/**").permitAll()
 						.requestMatchers(
 								"/api/v1/auth/signup",
 								"/api/v1/auth/login",
