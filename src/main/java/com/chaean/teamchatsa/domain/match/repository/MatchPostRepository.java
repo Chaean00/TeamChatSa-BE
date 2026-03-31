@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.domain.match.repository;
 
 import com.chaean.teamchatsa.domain.match.model.MatchPost;
+import com.chaean.teamchatsa.domain.match.model.MatchApplicationStatus;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchRecommendationProjection;
 import java.time.LocalDate;
@@ -11,6 +12,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MatchPostRepository extends JpaRepository<MatchPost, Long>, MatchPostRepositoryCustom {
+
+	List<MatchPost> findByTeamIdAndAcceptedApplicationIdIsNotNullOrderByMatchDateDesc(Long teamId);
+
+	@Query("""
+			SELECT mp
+			FROM MatchPost mp
+			JOIN MatchApplication ma ON mp.acceptedApplicationId = ma.id
+			WHERE ma.applicantTeamId = :teamId
+			  AND ma.status = :status
+			ORDER BY mp.matchDate DESC
+			""")
+	List<MatchPost> findAcceptedMatchesByApplicantTeamId(
+			@Param("teamId") Long teamId,
+			@Param("status") MatchApplicationStatus status
+	);
 
 	/**
 	 * 지도 중심 좌표 기준으로 가까운 marker를 최대 개수만큼 조회한다.

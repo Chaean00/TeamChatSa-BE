@@ -8,6 +8,7 @@ import com.chaean.teamchatsa.domain.match.dto.response.MatchApplicantResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchMapResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MyMatchHistoryResponse;
 import com.chaean.teamchatsa.domain.match.event.MatchApplicationCreatedEvent;
 import com.chaean.teamchatsa.domain.match.event.MatchApplicationProcessedEvent;
 import com.chaean.teamchatsa.domain.match.model.MatchApplication;
@@ -16,10 +17,15 @@ import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
+import com.chaean.teamchatsa.domain.match.repository.MatchResultRepository;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
+import com.chaean.teamchatsa.domain.match.model.MatchResult;
 import com.chaean.teamchatsa.domain.team.model.Team;
+import com.chaean.teamchatsa.domain.team.model.TeamMember;
+import com.chaean.teamchatsa.domain.team.model.TeamRole;
 import com.chaean.teamchatsa.domain.team.repository.TeamMemberRepository;
 import com.chaean.teamchatsa.domain.team.repository.TeamRepository;
+import com.chaean.teamchatsa.domain.team.repository.TeamReviewRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.DistributedLock;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.common.dto.SliceResponse;
@@ -30,7 +36,13 @@ import com.chaean.teamchatsa.global.exception.ErrorCode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,12 +62,14 @@ public class MatchService {
 
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 	private static final int MAP_MARKER_LIMIT = 40;
-	private static final int WIDE_ZOOM_THRESHOLD = 5;
+	private static final int WIDE_ZOOM_THRESHOLD = 4;
 	private static final double FOCUSED_BBOX_SCALE = 0.4;
 	private final MatchPostRepository matchPostRepo;
 	private final MatchApplicationRepository matchApplicationRepo;
+	private final MatchResultRepository matchResultRepo;
 	private final TeamMemberRepository teamMemberRepo;
 	private final TeamRepository teamRepo;
+	private final TeamReviewRepository teamReviewRepo;
 	private final ApplicationEventPublisher eventPublisher;
 	private final RedisCacheUtil cacheUtil;
 	private final CacheKeyGenerator cacheKeyGen;
@@ -162,6 +176,101 @@ public class MatchService {
 	private void deleteMatchPostsCache() {
 		String pattern = cacheKeyGen.getMatchListInvalidationPattern();
 		cacheUtil.deleteByPattern(pattern);
+	}
+
+	@Transactional(readOnly = true)
+	@Loggable
+	public List<MyMatchHistoryResponse> findMyMatchHistory(Long userId) {
+		TeamMember teamMember = teamMemberRepo.findByUserId(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_TEAM_MEMBER, "소속 팀이 없습니다."));
+
+		Long myTeamId = teamMember.getTeamId();
+		boolean canManageResult = teamMember.getRole() == TeamRole.LEADER || teamMember.getRole() == TeamRole.CO_LEADER;
+
+		Map<Long, MatchPost> historyMap = new HashMap<>();
+		matchPostRepo.findByTeamIdAndAcceptedApplicationIdIsNotNullOrderByMatchDateDesc(myTeamId)
+				.forEach(matchPost -> historyMap.put(matchPost.getId(), matchPost));
+		matchPostRepo.findAcceptedMatchesByApplicantTeamId(myTeamId, MatchApplicationStatus.ACCEPTED)
+				.forEach(matchPost -> historyMap.put(matchPost.getId(), matchPost));
+
+		List<MatchPost> history = new ArrayList<>(historyMap.values());
+		if (history.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> acceptedApplicationIds = history.stream()
+				.map(MatchPost::getAcceptedApplicationId)
+				.filter(id -> id != null)
+				.toList();
+		Map<Long, MatchApplication> applicationMap = matchApplicationRepo.findAllByIdIn(acceptedApplicationIds)
+				.stream()
+				.collect(Collectors.toMap(MatchApplication::getId, application -> application));
+
+		List<Long> matchPostIds = history.stream().map(MatchPost::getId).toList();
+		Map<Long, MatchResult> resultMap = matchResultRepo.findByMatchPostIdIn(matchPostIds)
+				.stream()
+				.collect(Collectors.toMap(MatchResult::getMatchPostId, result -> result));
+
+		Set<Long> teamIds = new HashSet<>();
+		history.forEach(matchPost -> {
+			teamIds.add(matchPost.getTeamId());
+			MatchApplication application = applicationMap.get(matchPost.getAcceptedApplicationId());
+			if (application != null) {
+				teamIds.add(application.getApplicantTeamId());
+			}
+		});
+		Map<Long, Team> teamMap = teamRepo.findAllById(teamIds)
+				.stream()
+				.collect(Collectors.toMap(Team::getId, team -> team));
+
+		Map<Long, Set<Long>> reviewedTeamsByMatch = teamReviewRepo.findByReviewerUserIdAndMatchIdIn(userId, matchPostIds)
+				.stream()
+				.collect(Collectors.groupingBy(
+						teamReview -> teamReview.getMatchId(),
+						Collectors.mapping(teamReview -> teamReview.getTeamId(), Collectors.toSet())
+				));
+
+		LocalDateTime now = LocalDateTime.now();
+
+		return history.stream()
+				.sorted(Comparator.comparing(MatchPost::getMatchDate).reversed())
+				.map(matchPost -> {
+					MatchApplication acceptedApplication = applicationMap.get(matchPost.getAcceptedApplicationId());
+					if (acceptedApplication == null) {
+						return null;
+					}
+
+					Long homeTeamId = matchPost.getTeamId();
+					Long awayTeamId = acceptedApplication.getApplicantTeamId();
+					Long opponentTeamId = myTeamId.equals(homeTeamId) ? awayTeamId : homeTeamId;
+					boolean matchCompleted = !matchPost.getMatchDate().plusHours(2).isAfter(now);
+					boolean resultRegistered = resultMap.containsKey(matchPost.getId());
+					boolean reviewWritten = reviewedTeamsByMatch.getOrDefault(matchPost.getId(), Set.of()).contains(opponentTeamId);
+					MatchResult result = resultMap.get(matchPost.getId());
+
+					return MyMatchHistoryResponse.builder()
+							.matchPostId(matchPost.getId())
+							.matchTitle(matchPost.getTitle())
+							.matchDate(matchPost.getMatchDate())
+							.placeName(matchPost.getPlaceName())
+							.address(matchPost.getAddress())
+							.matchPhase(matchCompleted ? "COMPLETED" : "SCHEDULED")
+							.homeTeamId(homeTeamId)
+							.homeTeamName(teamMap.get(homeTeamId) != null ? teamMap.get(homeTeamId).getName() : null)
+							.awayTeamId(awayTeamId)
+							.awayTeamName(teamMap.get(awayTeamId) != null ? teamMap.get(awayTeamId).getName() : null)
+							.opponentTeamId(opponentTeamId)
+							.opponentTeamName(teamMap.get(opponentTeamId) != null ? teamMap.get(opponentTeamId).getName() : null)
+							.resultRegistered(resultRegistered)
+							.homeScore(result != null ? result.getHomeScore() : null)
+							.awayScore(result != null ? result.getAwayScore() : null)
+							.reviewWritten(reviewWritten)
+							.canRegisterResult(matchCompleted && !resultRegistered && canManageResult)
+							.canReview(matchCompleted && !reviewWritten)
+							.build();
+				})
+				.filter(response -> response != null)
+				.toList();
 	}
 
 	/**

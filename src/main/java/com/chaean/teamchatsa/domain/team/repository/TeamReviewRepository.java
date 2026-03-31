@@ -11,4 +11,8 @@ public interface TeamReviewRepository extends JpaRepository<TeamReview, Long> {
     long countByTeamId(Long teamId);
 
     List<TeamReview> findTop10ByTeamIdOrderByCreatedAtDesc(Long teamId);
+
+	boolean existsByTeamIdAndReviewerUserIdAndMatchId(Long teamId, Long reviewerUserId, Long matchId);
+
+	List<TeamReview> findByReviewerUserIdAndMatchIdIn(Long reviewerUserId, List<Long> matchIds);
 }

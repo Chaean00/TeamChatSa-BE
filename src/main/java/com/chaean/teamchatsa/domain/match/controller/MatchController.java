@@ -11,6 +11,7 @@ import com.chaean.teamchatsa.domain.match.dto.response.MatchMapResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostDetailResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchPostListResponse;
 import com.chaean.teamchatsa.domain.match.dto.response.MatchRecommendationResponse;
+import com.chaean.teamchatsa.domain.match.dto.response.MyMatchHistoryResponse;
 import com.chaean.teamchatsa.domain.match.service.MatchRecommendationService;
 import com.chaean.teamchatsa.domain.match.service.MatchResultService;
 import com.chaean.teamchatsa.domain.match.service.MatchService;
@@ -61,10 +62,12 @@ public class MatchController {
 
 	@Operation(summary = "경기 결과 등록 API", description = "경기가 종료된 후 결과를 등록합니다.")
 	@PostMapping("/results")
+	@RequireTeamRole({TeamRole.LEADER, TeamRole.CO_LEADER})
 	public ResponseEntity<ApiResponse<Void>> createMatchResult(
+			@AuthenticationPrincipal Long userId,
 			@RequestBody @Validated MatchResultCreateRequest req
 	) {
-		matchResultService.registerMatchResult(req);
+		matchResultService.registerMatchResult(userId, req);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
 	}
 
@@ -86,6 +89,14 @@ public class MatchController {
 	) {
 		SliceResponse<MatchPostListResponse> response = matchService.findMatchPosts(req);
 		return ResponseEntity.ok(ApiResponse.success("매치 목록 조회 성공", response));
+	}
+
+	@Operation(summary = "내 경기 목록 조회 API", description = "내 팀이 확정되어 진행한 경기 목록을 조회합니다.")
+	@GetMapping("/my-history")
+	public ResponseEntity<ApiResponse<List<MyMatchHistoryResponse>>> getMyMatchHistory(
+			@AuthenticationPrincipal Long userId
+	) {
+		return ResponseEntity.ok(ApiResponse.success(matchService.findMyMatchHistory(userId)));
 	}
 
 	@Operation(summary = "AI 매치 추천 API", description = "사용자 검색어를 바탕으로 신청 가능한 매치 게시물을 추천합니다.")
