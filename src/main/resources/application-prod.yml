@@ -62,6 +62,9 @@ logging:
     root: INFO
     com.chaean.teamchatsa: INFO
 
+server:
+  forward-headers-strategy: framework
+
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL}

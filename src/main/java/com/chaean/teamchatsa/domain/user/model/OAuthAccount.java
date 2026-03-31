@@ -27,7 +27,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "oauth_account")
 @SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE oauth_account SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE app.oauth_account SET deleted_at = NOW() WHERE id = ?")
 public class OAuthAccount extends BaseEntity {
 
 	@Id
