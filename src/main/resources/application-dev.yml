@@ -24,12 +24,6 @@ spring:
           dimensions: 384
           encodingFormat: float
 
-  cloud:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}
-      credentials:
-        encoded-key: ${GCP_STORAGE_CREDENTIALS:}
-
   jpa:
     show-sql: true
     properties:
@@ -49,11 +43,8 @@ app:
   auth:
     redirect-success: http://localhost:3000/auth/kakao/callback
     redirect-failure: http://localhost:3000/auth/kakao/failure
-
-gcp:
-  storage:
-    bucket-name: ${GCP_STORAGE_BUCKET_NAME}
-    signed-url-expire-minutes: ${GCP_SIGNED_URL_EXPIRE_MINUTES:15}
+  upload:
+    base-dir: ${APP_UPLOAD_BASE_DIR:./uploads}
 
 logging:
   level:
