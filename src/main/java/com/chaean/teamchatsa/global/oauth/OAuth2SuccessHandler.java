@@ -1,6 +1,6 @@
 package com.chaean.teamchatsa.global.oauth;
 
-import com.chaean.teamchatsa.domain.user.dto.response.TokenResponse;
+import com.chaean.teamchatsa.domain.user.dto.response.KakaoAuthResult;
 import com.chaean.teamchatsa.domain.user.service.OAuthService;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import jakarta.servlet.ServletException;
@@ -53,25 +53,34 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 		String nickname = properties != null ? (String) properties.get("nickname") : null;
 		String profileImg = properties != null ? (String) properties.get("profile_image") : null;
 
+		String state = request.getParameter("state");
+
 		try {
-			TokenResponse tokens = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
-			// refresh Token 쿠키 설정
+			KakaoAuthResult authResult = oAuthService.loginByKakao(providerUserId, email, nickname, profileImg);
+			var tokens = authResult.getTokens();
 			ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
 					.maxAge(Duration.ofDays(refreshDays))
 					.httpOnly(true)
-					.secure("prod".equals(activeProfile))       // 운영 HTTPS 필수
-					.sameSite("prod".equals(activeProfile) ? "None" : "Lax")   // 다른 도메인으로 리다이렉트한다면 None 필요
+					.secure("prod".equals(activeProfile))
+					.sameSite("prod".equals(activeProfile) ? "None" : "Lax")
 					.path("/")
 					.build();
-
 			response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
 			String url = redirectSuccess + "?token=" + URLEncoder.encode(tokens.getAccessToken(), StandardCharsets.UTF_8);
+			if (state != null && !state.isBlank()) {
+				url += "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+			}
+			url += "&isNewUser=" + authResult.isNewUser();
 			getRedirectStrategy().sendRedirect(request, response, url);
 		} catch (BusinessException e) {
 			log.error("[OAuth] 카카오 로그인 중 에러가 발생했습니다.: {}", e.getMessage());
 			String url = redirectFailure + "?error=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+			if (state != null && !state.isBlank()) {
+				url += "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+			}
 			getRedirectStrategy().sendRedirect(request, response, url);
 		}
 	}
+
 }

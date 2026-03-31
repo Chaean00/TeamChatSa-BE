@@ -1,5 +1,6 @@
 package com.chaean.teamchatsa.domain.user.service;
 
+import com.chaean.teamchatsa.domain.user.dto.response.KakaoAuthResult;
 import com.chaean.teamchatsa.domain.user.dto.response.TokenResponse;
 import com.chaean.teamchatsa.domain.user.model.OAuthAccount;
 import com.chaean.teamchatsa.domain.user.model.OAuthProvider;
@@ -32,9 +33,10 @@ public class OAuthService {
 
 	@Transactional
 	@Loggable
-	public TokenResponse loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
+	public KakaoAuthResult loginByKakao(String kakaoId, String emailFromProvider, String nickname, String profileImg) {
 		Optional<OAuthAccount> existing = oauthRepo.findByProviderAndProviderUserId(OAuthProvider.KAKAO, kakaoId);
 		User user;
+		boolean isNewUser = false;
 
 		if (existing.isPresent()) {
 			OAuthAccount account = existing.get();
@@ -52,16 +54,17 @@ public class OAuthService {
 
 			OAuthAccount link = OAuthAccount.kakaoLink(user.getId(), kakaoId, emailFromProvider, nickname, profileImg);
 			oauthRepo.save(link);
+			isNewUser = true;
 		}
 
 		redisService.deleteRefreshToken(user.getId());
-
-		// RefreshToken 생성 및 Redis 저장
 		String accessToken = jwtProvider.createAccessToken(user.getId());
 		String refreshToken = jwtProvider.createRefreshToken(user.getId());
-
 		redisService.setRefreshToken(refreshToken, user.getId());
 
-		return new TokenResponse(accessToken, refreshToken);
+		return KakaoAuthResult.builder()
+				.tokens(new TokenResponse(accessToken, refreshToken))
+				.newUser(isNewUser)
+				.build();
 	}
 }

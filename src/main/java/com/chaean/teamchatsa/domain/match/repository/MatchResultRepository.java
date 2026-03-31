@@ -1,6 +1,7 @@
 package com.chaean.teamchatsa.domain.match.repository;
 
 import com.chaean.teamchatsa.domain.match.model.MatchResult;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,4 +16,8 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Long> 
 
     // 해당 팀이 승리한 경기 수
     long countByWinnerTeamId(Long teamId);
+
+	boolean existsByMatchPostId(Long matchPostId);
+
+	List<MatchResult> findByMatchPostIdIn(List<Long> matchPostIds);
 }

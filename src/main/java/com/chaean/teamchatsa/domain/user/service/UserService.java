@@ -11,6 +11,7 @@ import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.common.aop.annotation.Loggable;
 import com.chaean.teamchatsa.global.exception.BusinessException;
 import com.chaean.teamchatsa.global.exception.ErrorCode;
+import com.chaean.teamchatsa.infra.redis.RedisService;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class UserService {
 	private final TeamMemberRepository teamMemberRepo;
 	private final OAuthAccountRepository authRepo;
 	private final PasswordEncoder encoder;
+	private final RedisService redisService;
 
 	@Transactional(readOnly = true)
 	@Loggable
@@ -94,6 +96,10 @@ public class UserService {
 	public void deleteUser(Long userId) {
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "유저 정보를 찾을 수 없습니다."));
+
+		teamMemberRepo.findByUserId(userId).ifPresent(teamMemberRepo::delete);
+		authRepo.findByUserId(userId).ifPresent(authRepo::delete);
+		redisService.deleteRefreshToken(userId);
 
 		userRepo.delete(user);
 	}

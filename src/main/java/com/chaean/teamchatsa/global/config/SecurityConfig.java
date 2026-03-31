@@ -5,6 +5,7 @@ import com.chaean.teamchatsa.global.oauth.OAuth2FailureHandler;
 import com.chaean.teamchatsa.global.oauth.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,6 +36,7 @@ public class SecurityConfig {
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint))
 				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(HttpMethod.GET, "/api/v1/matches", "/api/v1/teams").permitAll()
 						.requestMatchers(
 								"/api/v1/auth/signup",
 								"/api/v1/auth/login",

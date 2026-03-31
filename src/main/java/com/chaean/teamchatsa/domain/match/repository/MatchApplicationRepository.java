@@ -5,6 +5,8 @@ import com.chaean.teamchatsa.domain.match.model.MatchApplicationStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface MatchApplicationRepository extends JpaRepository<MatchApplication, Long>, MatchApplicationRepositoryCustom {
 
@@ -15,4 +17,11 @@ public interface MatchApplicationRepository extends JpaRepository<MatchApplicati
 	boolean existsByPostIdAndApplicantTeamId(Long matchId, Long teamId);
 
 	boolean existsByPostIdAndStatus(Long matchId, MatchApplicationStatus status);
+
+	@Query("""
+			SELECT ma
+			FROM MatchApplication ma
+			WHERE ma.id IN :ids
+			""")
+	List<MatchApplication> findAllByIdIn(@Param("ids") List<Long> ids);
 }
