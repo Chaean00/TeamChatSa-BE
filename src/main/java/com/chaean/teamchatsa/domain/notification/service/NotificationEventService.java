@@ -151,7 +151,7 @@ public class NotificationEventService {
 				leaderUserIds,
 				type,
 				content,
-				"/matches"
+				"/matches/" + event.getMatchId()
 		);
 
 		log.info("매치 처리 알림 배치 저장 완료: count={}", leaderUserIds.size());
