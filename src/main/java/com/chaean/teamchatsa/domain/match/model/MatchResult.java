@@ -23,7 +23,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "match_result")
 @SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE match_result SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE app.match_result SET deleted_at = NOW() WHERE id = ?")
 public class MatchResult extends BaseEntity {
 
 	@Id

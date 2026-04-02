@@ -20,6 +20,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 @Getter
@@ -28,6 +30,8 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Table(name = "team")
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE app.team SET deleted_at = NOW() WHERE id = ?")
 public class Team extends BaseEntity {
 
 	@Id

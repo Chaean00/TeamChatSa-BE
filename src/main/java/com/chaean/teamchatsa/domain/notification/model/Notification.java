@@ -25,7 +25,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "notification")
 @SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE notification SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE app.notification SET deleted_at = NOW() WHERE id = ?")
 public class Notification extends BaseEntity {
 
 	@Id
