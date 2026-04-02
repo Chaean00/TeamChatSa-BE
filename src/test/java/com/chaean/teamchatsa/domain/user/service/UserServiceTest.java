@@ -19,6 +19,7 @@ import com.chaean.teamchatsa.domain.user.model.User;
 import com.chaean.teamchatsa.domain.user.repository.OAuthAccountRepository;
 import com.chaean.teamchatsa.domain.user.repository.UserRepository;
 import com.chaean.teamchatsa.global.exception.BusinessException;
+import com.chaean.teamchatsa.infra.redis.RedisService;
 import com.navercorp.fixturemonkey.FixtureMonkey;
 import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import java.util.Optional;
@@ -46,6 +47,8 @@ class UserServiceTest {
 	private OAuthAccountRepository authRepo;
 	@Mock
 	private PasswordEncoder encoder;
+	@Mock
+	private RedisService redisService;
 	@InjectMocks
 	private UserService userService;
 
