@@ -29,7 +29,7 @@ import org.hibernate.annotations.SQLRestriction;
 		@UniqueConstraint(name = "uc_team_application_user_id", columnNames = {"team_id", "user_id"})
 })
 @SQLRestriction("deleted_at IS NULL")
-@SQLDelete(sql = "UPDATE team_application SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE app.team_application SET deleted_at = NOW() WHERE id = ?")
 public class TeamApplication extends BaseEntity {
 
 	@Id
