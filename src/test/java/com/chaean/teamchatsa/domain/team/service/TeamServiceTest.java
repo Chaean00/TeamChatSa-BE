@@ -13,6 +13,7 @@ import com.chaean.teamchatsa.domain.team.dto.request.TeamJoinRequest;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamApplicationResponse;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamDetailResponse;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamListResponse;
+import com.chaean.teamchatsa.domain.team.model.ContactType;
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
@@ -74,6 +75,7 @@ class TeamServiceTest {
 			// given
 			Long userId = 1L;
 			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("contactType", ContactType.KAKAO)
 					.set("level", 3)
 					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
@@ -93,6 +95,7 @@ class TeamServiceTest {
 			// given
 			Long userId = 1L;
 			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("contactType", ContactType.KAKAO)
 					.set("level", 3)
 					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(true);
@@ -110,6 +113,7 @@ class TeamServiceTest {
 			// given
 			Long userId = 1L;
 			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("contactType", ContactType.KAKAO)
 					.set("level", 3)
 					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);
@@ -128,6 +132,7 @@ class TeamServiceTest {
 			// given
 			Long userId = 1L;
 			TeamCreateRequest req = fixtureMonkey.giveMeBuilder(TeamCreateRequest.class)
+					.set("contactType", ContactType.KAKAO)
 					.set("level", 99)
 					.sample();
 			given(teamMemberRepo.existsByUserId(userId)).willReturn(false);

@@ -117,6 +117,52 @@ public class SlackMessage {
 				.build();
 	}
 
+	/** 개발자 의견 알림 메시지 생성 */
+	public static SlackMessage createFeedbackAlert(
+			String senderName,
+			Long senderUserId,
+			String content,
+			String environment
+	) {
+		LocalDateTime now = LocalDateTime.now();
+		String timestamp = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+		return SlackMessage.builder()
+				.text("💡 새로운 사용자 의견이 도착했습니다")
+				.attachments(List.of(
+						Attachment.builder()
+								.color("good")
+								.title("💡 개발자 의견 제보")
+								.text(truncate(content, 500))
+								.fields(List.of(
+										Field.builder()
+												.title("보낸 사용자")
+												.value(senderName != null ? senderName : "Unknown")
+												.shortField(true)
+												.build(),
+										Field.builder()
+												.title("사용자 ID")
+												.value(senderUserId != null ? String.valueOf(senderUserId) : "Unknown")
+												.shortField(true)
+												.build(),
+										Field.builder()
+												.title("환경")
+												.value(environment != null ? environment : "unknown")
+												.shortField(true)
+												.build(),
+										Field.builder()
+												.title("전달 시간")
+												.value(timestamp)
+												.shortField(true)
+												.build()
+								))
+								.footer("User Feedback")
+								.ts(System.currentTimeMillis() / 1000)
+								.build()
+				))
+				.build();
+	}
+
 	/** 긴 텍스트 파싱 */
 	private static String truncate(String text, int maxLength) {
 		if (text == null || text.length() <= maxLength) {
