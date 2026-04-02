@@ -15,11 +15,11 @@ import com.chaean.teamchatsa.domain.match.model.MatchApplication;
 import com.chaean.teamchatsa.domain.match.model.MatchApplicationStatus;
 import com.chaean.teamchatsa.domain.match.model.MatchPost;
 import com.chaean.teamchatsa.domain.match.model.MatchPostStatus;
+import com.chaean.teamchatsa.domain.match.model.MatchResult;
 import com.chaean.teamchatsa.domain.match.repository.MatchApplicationRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchPostRepository;
 import com.chaean.teamchatsa.domain.match.repository.MatchResultRepository;
 import com.chaean.teamchatsa.domain.match.repository.projection.MatchLocationProjection;
-import com.chaean.teamchatsa.domain.match.model.MatchResult;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamMember;
 import com.chaean.teamchatsa.domain.team.model.TeamRole;
@@ -293,13 +293,57 @@ public class MatchService {
 	 */
 	@Transactional(readOnly = true)
 	@Loggable
-	public MatchPostDetailResponse findMatchPostDetail(Long matchId) {
+	public MatchPostDetailResponse findMatchPostDetail(Long matchId, Long userId) {
+		// 1. 기본 매치 상세 정보 조회
 		MatchPostDetailResponse content = matchPostRepo.findMatchPostDetailById(matchId);
 		if (content == null) {
 			throw new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND);
 		}
 
-		return content;
+		// 2. 비로그인 사용자는 기본 정보만 반환
+		if (userId == null) {
+			return content;
+		}
+
+		// 3. 매치가 확정된 상태인지 확인
+		MatchPost matchPost = matchPostRepo.findById(matchId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.MATCH_POST_NOT_FOUND));
+
+		if (matchPost.getStatus() != MatchPostStatus.CLOSED || matchPost.getAcceptedApplicationId() == null) {
+			return content;
+		}
+
+		// 4. 현재 사용자가 이 매치와 관련된 팀 소속인지 확인
+		Long myTeamId = teamMemberRepo.findTeamIdByUserId(userId);
+		if (myTeamId == null) {
+			return content;
+		}
+
+		// 5. 확정된 신청 정보를 기준으로 상대 팀 조회
+		MatchApplication acceptedApplication = matchApplicationRepo.findById(matchPost.getAcceptedApplicationId())
+				.orElse(null);
+		if (acceptedApplication == null) {
+			return content;
+		}
+
+		Long ownerTeamId = matchPost.getTeamId();
+		Long opponentTeamId = acceptedApplication.getApplicantTeamId();
+
+		if (!myTeamId.equals(ownerTeamId) && !myTeamId.equals(opponentTeamId)) {
+			return content;
+		}
+
+		// 6. 양 팀 정보를 조회한 뒤 연락처를 포함한 응답으로 확장
+		Team ownerTeam = teamRepo.findById(ownerTeamId).orElse(null);
+		Team opponentTeam = teamRepo.findById(opponentTeamId).orElse(null);
+		if (ownerTeam == null || opponentTeam == null) {
+			return content;
+		}
+
+		Team myTeam = myTeamId.equals(ownerTeamId) ? ownerTeam : opponentTeam;
+		Team otherTeam = myTeamId.equals(ownerTeamId) ? opponentTeam : ownerTeam;
+
+		return MatchPostDetailResponse.withContactInfo(content, myTeam, otherTeam);
 	}
 
 	/**
@@ -428,6 +472,7 @@ public class MatchService {
 
 		// 매치 신청 승인 이벤트 발행
 		eventPublisher.publishEvent(new MatchApplicationProcessedEvent(
+				matchId,
 				matchApplication.getApplicantTeamId(),
 				matchPost.getTitle(),
 				MatchApplicationStatus.ACCEPTED,
@@ -467,6 +512,7 @@ public class MatchService {
 
 		// 매치 신청 거절 이벤트 발행
 		eventPublisher.publishEvent(new MatchApplicationProcessedEvent(
+				matchId,
 				matchApplication.getApplicantTeamId(),
 				matchPost.getTitle(),
 				MatchApplicationStatus.REJECTED,

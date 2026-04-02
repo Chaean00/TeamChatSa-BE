@@ -8,6 +8,7 @@ import com.chaean.teamchatsa.domain.team.dto.response.TeamListResponse;
 import com.chaean.teamchatsa.domain.team.dto.response.TeamMemberResponse;
 import com.chaean.teamchatsa.domain.team.event.TeamApplicationCreatedEvent;
 import com.chaean.teamchatsa.domain.team.event.TeamApplicationProcessedEvent;
+import com.chaean.teamchatsa.domain.team.model.ContactType;
 import com.chaean.teamchatsa.domain.team.model.JoinStatus;
 import com.chaean.teamchatsa.domain.team.model.Team;
 import com.chaean.teamchatsa.domain.team.model.TeamApplication;
@@ -34,6 +35,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +61,9 @@ public class TeamService {
 		// 중복 팀명 체크
 		if (teamRepo.existsByName(req.getName())) {
 			throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 팀명입니다.");
+		}
+		if (req.getContactType() != ContactType.KAKAO && req.getContactType() != ContactType.PHONE) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "연락수단은 카카오톡 ID 또는 전화번호만 설정할 수 있습니다.");
 		}
 
 		TeamLevel level = TeamLevel.fromValue(req.getLevel());
@@ -157,7 +162,7 @@ public class TeamService {
 		eventPublisher.publishEvent(new TeamApplicationCreatedEvent(
 				teamId,
 				userId,
-				applicant.getNickname(),
+				StringUtils.hasText(applicant.getNickname()) ? applicant.getNickname() : applicant.getUsername(),
 				application.getId(),
 				req.getMessage(),
 				LocalDateTime.now()

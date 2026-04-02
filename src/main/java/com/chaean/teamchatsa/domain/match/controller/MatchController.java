@@ -121,10 +121,11 @@ public class MatchController {
 	@Operation(summary = "매치 게시물 상세 조회 API", description = "특정 매치 게시물의 상세 정보를 조회합니다.")
 	@GetMapping("/{matchId}")
 	public ResponseEntity<ApiResponse<MatchPostDetailResponse>> getMatchDetail(
-			@PathVariable Long matchId
+			@PathVariable Long matchId,
+			@AuthenticationPrincipal Long userId
 	) {
 		return ResponseEntity.ok(
-				ApiResponse.success("매치 상세 조회 성공", matchService.findMatchPostDetail(matchId)));
+				ApiResponse.success("매치 상세 조회 성공", matchService.findMatchPostDetail(matchId, userId)));
 	}
 
 	@Operation(summary = "매치 신청 API", description = "특정 매치 게시물에 팀이 신청합니다.")

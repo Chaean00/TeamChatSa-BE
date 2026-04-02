@@ -12,6 +12,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MatchApplicationProcessedEvent {
 
+	private final Long matchId;
 	private final Long applicantTeamId;
 	private final String matchTitle;
 	private final MatchApplicationStatus status;  // ACCEPTED or REJECTED
