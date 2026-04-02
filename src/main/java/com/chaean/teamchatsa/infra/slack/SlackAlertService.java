@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class SlackAlertService {
 
 	private final RestClient restClient;
 	private final ObjectMapper objectMapper;
+	private final Environment environment;
 	@Value("${slack.webhook.url}")
 	private String webhookUrl;
 	@Value("${slack.webhook.enabled}")
@@ -57,7 +59,7 @@ public class SlackAlertService {
 			String userId
 	) {
 		SlackMessage message = SlackMessage.createErrorAlert(
-				errorTitle, errorMessage, stackTrace, endpoint, userId
+				errorTitle, errorMessage, stackTrace, endpoint, userId, resolveEnvironmentLabel()
 		);
 		sendAlert(message);
 	}
@@ -65,8 +67,22 @@ public class SlackAlertService {
 	/** 비동기 작업 실패 알림 전송 (편의 메서드) */
 	public void sendAsyncFailureAlert(String methodName, String errorMessage, Object[] params) {
 		SlackMessage message = SlackMessage.createAsyncFailureAlert(
-				methodName, errorMessage, params
+				methodName, errorMessage, params, resolveEnvironmentLabel()
 		);
 		sendAlert(message);
+	}
+
+	String resolveEnvironmentLabel() {
+		String[] activeProfiles = environment.getActiveProfiles();
+		if (activeProfiles.length > 0) {
+			return String.join(", ", activeProfiles);
+		}
+
+		String[] defaultProfiles = environment.getDefaultProfiles();
+		if (defaultProfiles.length > 0) {
+			return String.join(", ", defaultProfiles);
+		}
+
+		return "default";
 	}
 }

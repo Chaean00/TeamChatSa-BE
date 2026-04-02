@@ -24,7 +24,8 @@ public class SlackMessage {
 			String errorMessage,
 			String stackTrace,
 			String endpoint,
-			String userId
+			String userId,
+			String environment
 	) {
 		LocalDateTime now = LocalDateTime.now();
 		String timestamp = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -54,7 +55,7 @@ public class SlackMessage {
 												.build(),
 										Field.builder()
 												.title("환경")
-												.value(System.getProperty("spring.profiles.active", "dev"))
+												.value(environment != null ? environment : "unknown")
 												.shortField(true)
 												.build(),
 										Field.builder()
@@ -75,7 +76,8 @@ public class SlackMessage {
 	public static SlackMessage createAsyncFailureAlert(
 			String methodName,
 			String errorMessage,
-			Object[] params
+			Object[] params,
+			String environment
 	) {
 		return SlackMessage.builder()
 				.text("⚠️ 비동기 작업 실패")
@@ -100,6 +102,12 @@ public class SlackMessage {
 														String.join(", ",
 																java.util.Arrays.toString(params)) : "N/A")
 												.shortField(false)
+												.build()
+										,
+										Field.builder()
+												.title("환경")
+												.value(environment != null ? environment : "unknown")
+												.shortField(true)
 												.build()
 								))
 								.footer("Async Task Monitor")
