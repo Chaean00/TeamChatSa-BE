@@ -72,6 +72,17 @@ public class SlackAlertService {
 		sendAlert(message);
 	}
 
+	/** 개발자 의견 알림 전송 */
+	public void sendFeedbackAlert(Long senderUserId, String senderName, String content) {
+		SlackMessage message = SlackMessage.createFeedbackAlert(
+				senderName,
+				senderUserId,
+				content,
+				resolveEnvironmentLabel()
+		);
+		sendAlert(message);
+	}
+
 	String resolveEnvironmentLabel() {
 		String[] activeProfiles = environment.getActiveProfiles();
 		if (activeProfiles.length > 0) {
