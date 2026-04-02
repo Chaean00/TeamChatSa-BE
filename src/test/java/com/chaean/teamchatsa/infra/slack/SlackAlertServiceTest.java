@@ -45,4 +45,27 @@ class SlackAlertServiceTest {
 							assertThat(field.getValue()).isEqualTo("prod");
 						}));
 	}
+
+	@Test
+	@DisplayName("Slack feedback 메시지에 사용자와 내용이 포함된다")
+	void feedbackAlertContainsUserAndContent() {
+		SlackMessage message = SlackMessage.createFeedbackAlert(
+				"테스터",
+				1L,
+				"알림 UX를 개선해주세요.",
+				"dev"
+		);
+
+		assertThat(message.getText()).contains("사용자 의견");
+		assertThat(message.getAttachments())
+				.singleElement()
+				.satisfies(attachment -> {
+					assertThat(attachment.getText()).contains("알림 UX를 개선해주세요.");
+					assertThat(attachment.getFields())
+							.anySatisfy(field -> {
+								assertThat(field.getTitle()).isEqualTo("보낸 사용자");
+								assertThat(field.getValue()).isEqualTo("테스터");
+							});
+				});
+	}
 }
